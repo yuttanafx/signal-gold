@@ -53,10 +53,11 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   z-index: 10; padding: 20px; text-align: center; backdrop-filter: blur(6px);
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-/* ✨ สไตล์กล่องคุมความโปร่งแสงของไฟล์วีดีโอ 3D */
+
+/* ✨ คอนเทนเนอร์คุมกรอบอนิเมชั่น 3D ให้สมส่วนตามสัดส่วนโมเดล */
 .tve-3d-animation {
-  width: 140px; height: 140px; object-fit: contain; margin-bottom: 4px;
-  mix-blend-mode: screen; pointer-events: none;
+  width: 140px; height: 140px; object-fit: contain; margin-bottom: 8px;
+  pointer-events: none;
 }
 .lock-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: var(--gold); font-family: 'Space Mono', monospace; letter-spacing: 1px; }
 .lock-desc { font-size: 11px; color: var(--text2); margin-bottom: 14px; }
@@ -217,11 +218,15 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       
       <div class="signal-container-relative">
         
+        <!-- 🔐 หน้ากากบดบังกล่องสัญญาณหลัก + ล็อกแก้ปัญหาระบบ Autoplay 3D ครอบคลุมทุกบราวเซอร์ -->
         <div class="signal-lock-overlay" id="lockOverlay">
           
-          <video class="tve-3d-animation" autoplay loop muted playsinline>
+          <!-- 🎥 บล็อกสตรีมแอนิเมชัน 3D (รองรับ .webm, .mp4 และดักจับรูป .gif เป็นแผนสำรองชั้นสุดท้าย) -->
+          <video class="tve-3d-animation" autoplay loop muted playsinline webkit-playsinline preload="auto">
             <source src="tve-3d.webm" type="video/webm">
-            </video>
+            <source src="tve-3d.mp4" type="video/mp4">
+            <img src="tve-3d.gif" class="tve-3d-animation" alt="TVE 3D Ecosystem">
+          </video>
 
           <div class="lock-title">TVE ECOSYSTEM VIP</div>
           <div class="lock-desc">กรอกรหัสผ่านควบคุมเพื่อเข้าถึงจุดสัญญาณเทรด</div>
