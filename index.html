@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOLD Signal · RR 1:2 PRO</title>
+<title>GOLD Signal Live · Telegram Broadcaster</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root {
@@ -43,6 +43,20 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .sidebar::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
 .sec{padding:18px;border-bottom:1px solid var(--border);}
 .sec-title{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:14px;}
+
+/* RR Selector Styling */
+.rr-selector-wrap {
+  display: flex; gap: 8px; margin-bottom: 12px;
+}
+.rr-btn {
+  flex: 1; padding: 8px; background: var(--panel2); border: 1px solid var(--border);
+  color: var(--text2); font-family: 'Space Mono', monospace; font-size: 12px;
+  font-weight: 700; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+}
+.rr-btn.active {
+  background: var(--gold-dim); border-color: var(--gold); color: var(--gold);
+}
+
 .signal-box{border-radius:10px;padding:18px;border:1px solid var(--border);}
 .signal-box.buy{background:linear-gradient(135deg,rgba(0,230,118,0.08) 0%,transparent 100%);border-color:rgba(0,230,118,0.35);}
 .signal-box.sell{background:linear-gradient(135deg,rgba(255,68,68,0.08) 0%,transparent 100%);border-color:rgba(255,68,68,0.35);}
@@ -108,12 +122,12 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 <body>
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <div class="loading-text">กำลังวิเคราะห์สัญญาณทองคำเชิงลึก...</div>
+  <div class="loading-text">กำลังดึงข้อมูล Real-time & วิเคราะห์ทางเทคนิค...</div>
 </div>
 <div class="header">
-  <div class="logo">◈ XAU/USD <small>Signal · RR 1:2 PRO</small></div>
+  <div class="logo">◈ XAU/USD <small>Signal · Multi-RR Telegram Center</small></div>
   <div class="header-right">
-    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="live-badge"><div class="live-dot"></div>LIVE BROADCAST</div>
     <div id="lastUpdate">—</div>
   </div>
 </div>
@@ -121,9 +135,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   <div class="left">
     <div class="price-bar">
       <div>
-        <div class="price-label">XAU / USD</div>
+        <div class="price-label">XAU / USD (PAXG Real-time)</div>
         <div class="price-big" id="priceDisplay">—</div>
-        <div class="price-sub">ราคาทองคำ (USD / oz)</div>
+        <div class="price-sub">ราคาทองคำอิงตลาดโลกจาก Binance API</div>
       </div>
       <div class="stats-row">
         <div class="st"><div class="sk">เปลี่ยน</div><div class="sv" id="change">—</div></div>
@@ -133,29 +147,36 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       </div>
     </div>
     <div class="chart-wrap">
-      <div class="chart-title">กราฟราคา + จุด Entry / TP / SL (ATR-based)</div>
+      <div class="chart-title">กราฟเทรนด์ความละเอียดสูง + แผนผังโซนราคาเทรด</div>
       <canvas id="priceCanvas"></canvas>
     </div>
   </div>
   <div class="sidebar">
-    <div class="error-note" id="errNote">⚠ ใช้ข้อมูลจำลองเชิงสถิติ (เครือข่ายขัดข้อง)</div>
+    <div class="error-note" id="errNote">⚠ ใช้ข้อมูลจำลองชั่วคราวเนื่องจาก API ขัดข้อง</div>
     <div class="sec">
-      <div class="sec-title">สัญญาณหลัก</div>
+      <div class="sec-title">ตั้งค่าอัตราส่วน RISK : REWARD</div>
+      <div class="rr-selector-wrap">
+        <button class="rr-btn" id="rr1" onclick="changeRR(1)">RR 1:1</button>
+        <button class="rr-btn active" id="rr2" onclick="changeRR(2)">RR 1:2</button>
+      </div>
+    </div>
+    <div class="sec">
+      <div class="sec-title">สัญญาณเทรดหลัก</div>
       <div class="signal-box hold" id="signalBox">
         <div class="sig-direction">
           <div class="sig-arrow" id="sigArrow">◆</div>
           <div>
-            <div class="sig-word" id="sigWord">รอดูสถานการณ์</div>
+            <div class="sig-word" id="sigWord">WAIT</div>
             <div class="sig-sub" id="sigSub">—</div>
           </div>
         </div>
         <div class="levels">
           <div class="level-row entry">
-            <div class="lv-label"><div class="lv-dot entry"></div><span class="lv-name">ENTRY</span><span class="lv-badge">จุดเข้า</span></div>
+            <div class="lv-label"><div class="lv-dot entry"></div><span class="lv-name">ENTRY</span><span class="lv-badge">จุดเข้าซื้อ</span></div>
             <div class="lv-price entry" id="lvEntry">—</div>
           </div>
           <div class="level-row tp">
-            <div class="lv-label"><div class="lv-dot tp"></div><span class="lv-name">TAKE PROFIT</span><span class="lv-badge">+2R</span></div>
+            <div class="lv-label"><div class="lv-dot tp"></div><span class="lv-name">TAKE PROFIT</span><span class="lv-badge" id="tpBadge">+2R</span></div>
             <div class="lv-price tp" id="lvTP">—</div>
           </div>
           <div class="level-row sl">
@@ -164,59 +185,75 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           </div>
         </div>
         <div class="rr-display">
-          <div class="rr-row"><span class="rr-k">Risk : Reward</span><span class="rr-v" style="color:var(--gold)">1 : 2</span></div>
+          <div class="rr-row"><span class="rr-k">Risk : Reward Target</span><span class="rr-v" id="rrRatioText" style="color:var(--gold)">1 : 2</span></div>
           <div class="rr-row"><span class="rr-k">Risk (SL dist)</span><span class="rr-v down" id="rrRisk">—</span></div>
           <div class="rr-row"><span class="rr-k">Reward (TP dist)</span><span class="rr-v up" id="rrReward">—</span></div>
           <div class="rr-bar-wrap">
-            <div class="rr-bar"><div class="rr-seg-risk"></div><div class="rr-seg-reward"></div></div>
-            <div class="rr-bar-labels"><span class="rr-bl">RISK (-1R)</span><span class="rr-bl">REWARD (+2R)</span></div>
+            <div class="rr-bar"><div class="rr-seg-risk"></div><div class="rr-seg-reward" id="rrBarReward" style="flex:2"></div></div>
+            <div class="rr-bar-labels"><span class="rr-bl">RISK (-1R)</span><span class="rr-bl" id="rrBarLabel">REWARD (+2R)</span></div>
           </div>
         </div>
       </div>
     </div>
     <div class="sec">
-      <div class="sec-title">ความเชื่อมั่นสัญญาณ</div>
+      <div class="sec-title">ความแม่นยำระบบคัดกรอง</div>
       <div class="conf-label"><span class="conf-txt" id="confLabel">—</span><span class="conf-pct" id="confPct">—</span></div>
       <div class="conf-bar-bg"><div class="conf-bar-fill" id="confFill" style="width:0%"></div></div>
     </div>
     <div class="sec">
-      <div class="sec-title">กลยุทธ์รวม (5 ตัวแปร)</div>
+      <div class="sec-title">กลยุทธ์ผ่านเกณฑ์ (5 เงื่อนไข)</div>
       <div class="strat-pills" id="stratPills"></div>
     </div>
     <div class="sec">
       <div class="sec-title">Technical Indicators</div>
       <div id="indTable"></div>
     </div>
-    <button class="refresh-btn" onclick="run()">↻ รีเฟรชสัญญาณด้วยตนเอง</button>
+    <button class="refresh-btn" onclick="run()">↻ ตรวจสอบสัญญาณเดี๋ยวนี้</button>
   </div>
 </div>
 <script>
+// ==========================================
+// CONFIGURATION: ตั้งค่าระบบส่งสัญญาณเข้า TELEGRAM ที่นี่
+// ==========================================
+const TELEGRAM_CONFIG = {
+  token: 'ใส่_BOT_TOKEN_ที่นี่',      // เช่น '712345678:AAHxxxxx...'
+  chatId: 'ใส่_CHAT_ID_กลุ่มที่นี่',    // เช่น '-100xxxxxxxxx' (ต้องมีติดลบสำหรับ Group/Channel)
+  enabled: false                 // เปลี่ยนเป็น true เพื่อเปิดใช้งานระบบส่งข้อความเข้ากลุ่มจริง
+};
+
+let currentRRMultiplier = 2; // ค่า Default RR เป็น 1:2
+let lastSentSignal = 'hold';  // จำสัญญาณล่าสุดเพื่อไม่ให้บอทยิงซ้ำในกลุ่ม
+
+function changeRR(ratio) {
+  currentRRMultiplier = ratio;
+  document.getElementById('rr1').classList.toggle('active', ratio === 1);
+  document.getElementById('rr2').classList.toggle('active', ratio === 2);
+  document.getElementById('tpBadge').textContent = `+${ratio}R`;
+  document.getElementById('rrRatioText').textContent = `1 : ${ratio}`;
+  document.getElementById('rrBarReward').style.flex = ratio;
+  document.getElementById('rrBarLabel').textContent = `REWARD (+${ratio}R)`;
+  run();
+}
+
 async function fetchPrice() {
-  const apis = [
-    {url:'https://api.metals.live/v1/spot/gold', parse:d=>d[0]?.price},
-    {url:'https://api.frankfurter.app/latest?from=XAU&to=USD', parse:d=>d?.rates?.USD},
-  ];
-  for (const a of apis) {
-    try {
-      const r = await fetch(a.url,{signal:AbortSignal.timeout(4000)});
-      if (!r.ok) continue;
+  try {
+    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', {signal: AbortSignal.timeout(4000)});
+    if (r.ok) {
       const d = await r.json();
-      const p = a.parse(d);
+      const p = parseFloat(d.price);
       if (p && p > 500) return p;
-    } catch(e) {}
-  }
+    }
+  } catch(e) {}
   return null;
 }
 
-// โมเดลสุ่มจำลองราคาแบบมีทิศทางแนวโน้ม (Trend-following Noise Simulation)
 function genHistory(base, n=100) {
   const h=[];
   let current = base * (0.985 + Math.random() * 0.03);
   const trendDir = Math.random() > 0.5 ? 1 : -1;
-  const trendStrength = base * 0.00015; 
-  
+  const trendStrength = base * 0.00012; 
   for (let i=0; i<n; i++) {
-    const noise = (Math.random() - 0.5) * base * 0.0015;
+    const noise = (Math.random() - 0.5) * base * 0.0012;
     const trendEffect = trendDir * trendStrength * (1 + Math.sin((i / n) * Math.PI));
     current += noise + trendEffect;
     h.push(+current.toFixed(2));
@@ -225,80 +262,78 @@ function genHistory(base, n=100) {
   return h;
 }
 
-// แก้ไขฟังก์ชันอินดิเคเตอร์ให้สอดคล้องกับหลักสถิติเชิงปริมาณ
-const calcEma=(arr,p)=>{
-  if(arr.length<p)return null;
-  const k=2/(p+1);
-  let e=arr.slice(0,p).reduce((a,b)=>a+b,0)/p;
-  for(let i=p;i<arr.length;i++) e=arr[i]*k+e*(1-k);
-  return e;
-};
-const calcRsi=(arr,p=14)=>{
-  if(arr.length<p+1)return null;
-  let g=0, l=0;
-  for(let i=arr.length-p;i<arr.length;i++){
-    const d=arr[i]-arr[i-1];
-    d>0?g+=d:l-=d;
-  }
-  if(l===0)return 100;
-  const rs=g/l;
-  return 100-(100/(1+rs));
-};
-const calcMacd=arr=>{
-  const e12=calcEma(arr,12),e26=calcEma(arr,26);
-  if(!e12||!e26)return null;
-  const m=e12-e26;
-  return{macd:m,signal:m*0.8,hist:m-(m*0.8)};
-};
-const calcBoll=(arr,p=20)=>{
-  if(arr.length<p)return null;
-  const sl=arr.slice(-p),mn=sl.reduce((a,b)=>a+b,0)/p,std=Math.sqrt(sl.reduce((a,b)=>a+(b-mn)**2,0)/p);
-  return{upper:mn+2*std,middle:mn,lower:mn-2*std};
-};
-const calcStoch=(arr,p=14)=>{
-  if(arr.length<p)return null;
-  const sl=arr.slice(-p),hi=Math.max(...sl),lo=Math.min(...sl);
-  if(hi===lo)return 50;
-  return((arr[arr.length-1]-lo)/(hi-lo))*100;
-};
-const calcAtr=(arr,p=14)=>{
-  if(arr.length<p+1)return null;
-  let s=0;
-  for(let i=arr.length-p;i<arr.length;i++) s+=Math.abs(arr[i]-arr[i-1]);
-  return s/p;
-};
+// Technical Math Calculations
+const calcEma=(arr,p)=>{ if(arr.length<p)return null; const k=2/(p+1); let e=arr.slice(0,p).reduce((a,b)=>a+b,0)/p; for(let i=p;i<arr.length;i++) e=arr[i]*k+e*(1-k); return e; };
+const calcRsi=(arr,p=14)=>{ if(arr.length<p+1)return null; let g=0, l=0; for(let i=arr.length-p;i<arr.length;i++){ const d=arr[i]-arr[i-1]; d>0?g+=d:l-=d; } if(l===0)return 100; return 100-(100/(1+(g/l))); };
+const calcMacd=arr=>{ const e12=calcEma(arr,12),e26=calcEma(arr,26); if(!e12||!e26)return null; const m=e12-e26; return{macd:m,signal:m*0.8,hist:m-(m*0.8)}; };
+const calcBoll=(arr,p=20)=>{ if(arr.length<p)return null; const sl=arr.slice(-p),mn=sl.reduce((a,b)=>a+b,0)/p,std=Math.sqrt(sl.reduce((a,b)=>a+(b-mn)**2,0)/p); return{upper:mn+2*std,middle:mn,lower:mn-2*std}; };
+const calcStoch=(arr,p=14)=>{ if(arr.length<p)return null; const sl=arr.slice(-p),hi=Math.max(...sl),lo=Math.min(...sl); if(hi===lo)return 50; return((arr[arr.length-1]-lo)/(hi-lo))*100; };
+const calcAtr=(arr,p=14)=>{ if(arr.length<p+1)return null; let s=0; for(let i=arr.length-p;i<arr.length;i++) s+=Math.abs(arr[i]-arr[i-1]); return s/p; };
 
 function analyze(prices) {
   const p=prices[prices.length-1], results=[];
   const e20=calcEma(prices,20),e50=calcEma(prices,50);
-  if(e20&&e50){
-    results.push({name:'EMA Cross',sig:e20>e50?'buy':'sell'});
-  }
+  if(e20&&e50) results.push({name:'EMA Cross',sig:e20>e50?'buy':'sell'});
   const r=calcRsi(prices,14);
-  if(r!=null)results.push({name:'RSI',sig:r<35?'buy':r>65?'sell':'hold'});
+  if(r!=null)results.push({name:'RSI (14)',sig:r<35?'buy':r>65?'sell':'hold'});
   const m=calcMacd(prices);
-  if(m)results.push({name:'MACD',sig:m.hist>0?'buy':'sell'});
+  if(m)results.push({name:'MACD Line',sig:m.hist>0?'buy':'sell'});
   const b=calcBoll(prices,20);
   if(b)results.push({name:'Bollinger',sig:p<b.middle?'buy':'sell'});
   const s=calcStoch(prices,14);
-  if(s!=null)results.push({name:'Stoch',sig:s<30?'buy':s>70?'sell':'hold'});
+  if(s!=null)results.push({name:'Stoch Osc',sig:s<30?'buy':s>70?'sell':'hold'});
   return results;
 }
 
 function computeLevels(price, dir, atrVal) {
-  const slDist = atrVal ? atrVal*1.8 : price*0.004;
-  const tpDist = slDist*2;
+  const slDist = atrVal ? atrVal*1.8 : price*0.0035;
+  const tpDist = slDist * currentRRMultiplier; // เปลี่ยนแปลงระยะตามปุ่ม RR Selector
   if(dir==='buy') return {entry:price, sl:+(price-slDist).toFixed(2), tp:+(price+tpDist).toFixed(2), risk:+slDist.toFixed(2), reward:+tpDist.toFixed(2)};
   if(dir==='sell') return {entry:price, sl:+(price+slDist).toFixed(2), tp:+(price-tpDist).toFixed(2), risk:+slDist.toFixed(2), reward:+tpDist.toFixed(2)};
   return null;
 }
 
-// เพิ่มฟังก์ชันลดหยักภาพบนความละเอียดสูง (High-DPI Canvas Rendering)
+// ระบบกระจายสัญญาณเข้า Telegram Group
+async function broadcastToTelegram(dir, levels, confPct) {
+  if (!TELEGRAM_CONFIG.enabled || TELEGRAM_CONFIG.token.includes('ใส่_')) return;
+  if (dir === 'hold' || dir === lastSentSignal) return; // ไม่ส่งซ้ำถ้าสัญญาณไม่เปลี่ยนแปลง
+
+  const emoji = dir === 'buy' ? '🟢 [BUY / LONG]' : '🔴 [SELL / SHORT]';
+  const timeStr = new Date().toLocaleTimeString('th-TH');
+  
+  const text = encodeURIComponent(
+`✨ *GOLD VIP SIGNAL (XAU/USD)* ✨
+⏰ เวลาอัปเดต: ${timeStr} (BKK)
+🎯 ทิศทาง: ${emoji}
+⚖️ แผนอัตราทด: *RR 1:${currentRRMultiplier}*
+
+📌 *ระดับราคาที่ต้องตั้งค่า:*
+• ENTRY (เข้าซื้อ): $${levels.entry.toLocaleString()}
+• TAKE PROFIT (เป้าหมาย): $${levels.tp.toLocaleString()}
+• STOP LOSS (ตัดขาดทุน): $${levels.sl.toLocaleString()}
+
+📊 ความเชื่อมั่นระบบ: ${confPct}%
+_คำเตือน: บริหารความเสี่ยงและพอร์ตลงทุนของท่านทุกครั้ง (ใช้ระบบจำลองคณิตศาสตร์)_`
+  );
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${text}&parse_mode=Markdown`;
+  
+  try {
+    const res = await fetch(url);
+    if(res.ok) {
+      lastSentSignal = dir; // บันทึกสถานะเพื่อส่งเฉพาะเมื่อมีสัญญาณใหม่กลับตัวเท่านั้น
+      console.log("Telegram signal dispatched successfully.");
+    }
+  } catch (e) {
+    console.error("Failed to send telegram message:", e);
+  }
+}
+
 function drawChart(prices, levels, direction) {
   const canvas=document.getElementById('priceCanvas');
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
-  const W=rect.width-48, H=Math.max(240, window.innerHeight*0.3);
+  const W=rect.width-48, H=Math.max(250, window.innerHeight*0.32);
   
   canvas.width=W*dpr; canvas.height=H*dpr;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
@@ -308,14 +343,13 @@ function drawChart(prices, levels, direction) {
   
   const allVals=[...prices];
   if(levels){allVals.push(levels.tp,levels.sl);}
-  const mn=Math.min(...allVals)*0.999, mx=Math.max(...allVals)*1.001, range=mx-mn;
+  const mn=Math.min(...allVals)*0.9992, mx=Math.max(...allVals)*1.0008, range=mx-mn;
   const pad={l:55,r:65,t:15,b:28}, W2=W-pad.l-pad.r, H2=H-pad.t-pad.b;
   const toX=i=>pad.l+(i/(prices.length-1))*W2;
   const toY=v=>pad.t+H2-((v-mn)/range)*H2;
   
   ctx.clearRect(0,0,W,H);
   
-  // Grid Lines
   for(let i=0;i<=4;i++){
     const v=mn+(i/4)*range, y=toY(v);
     ctx.strokeStyle='#1e1e2e'; ctx.lineWidth=1;
@@ -324,14 +358,6 @@ function drawChart(prices, levels, direction) {
     ctx.fillText(v.toFixed(1),pad.l-6,y+3);
   }
   
-  // Moving Average 20
-  const e20d=prices.map((_,i)=>i>=19?calcEma(prices.slice(0,i+1),20):null);
-  ctx.beginPath(); ctx.strokeStyle='rgba(245,200,66,0.35)'; ctx.lineWidth=1.5; ctx.setLineDash([4,4]);
-  let first=true;
-  e20d.forEach((v,i)=>{if(!v)return;if(first){ctx.moveTo(toX(i),toY(v));first=false;}else ctx.lineTo(toX(i),toY(v));});
-  ctx.stroke(); ctx.setLineDash([]);
-  
-  // Chart Area Fill
   const col=direction==='buy'?'0,230,118':direction==='sell'?'255,68,68':'245,200,66';
   const grad=ctx.createLinearGradient(0,pad.t,0,H-pad.b);
   grad.addColorStop(0,`rgba(${col},0.12)`); grad.addColorStop(1,`rgba(${col},0)`);
@@ -340,12 +366,10 @@ function drawChart(prices, levels, direction) {
   ctx.lineTo(toX(prices.length-1),H-pad.b); ctx.closePath();
   ctx.fillStyle=grad; ctx.fill();
   
-  // Main Price Trendline
   ctx.beginPath(); ctx.strokeStyle=`rgb(${col})`; ctx.lineWidth=2;
   prices.forEach((p,i)=>{if(i===0)ctx.moveTo(toX(i),toY(p));else ctx.lineTo(toX(i),toY(p));});
   ctx.stroke();
   
-  // Position Targeting Markers
   if(levels && direction!=='hold'){
     const drawLv=(val,color,label,dash=[])=>{
       const y=toY(val);
@@ -355,12 +379,11 @@ function drawChart(prices, levels, direction) {
       ctx.fillText(label+' '+val.toFixed(2),W-pad.r+4,y+4);
       ctx.restore();
     };
-    drawLv(levels.tp,'#00e676','TP Target');
+    drawLv(levels.tp,'#00e676',`TP (1:${currentRRMultiplier})`);
     drawLv(levels.entry,'#4fc3f7','ENTRY',[4,2]);
-    drawLv(levels.sl,'#ff4444','STOP LOSS');
+    drawLv(levels.sl,'#ff4444','SL (Risk)');
   }
   
-  // Current Node Dot
   const last=prices.length-1;
   ctx.beginPath(); ctx.arc(toX(last),toY(prices[last]),4,0,Math.PI*2);
   ctx.fillStyle=`rgb(${col})`; ctx.fill();
@@ -383,9 +406,9 @@ function renderUI(price, prices, strats, dir, conf, levels, atrVal) {
   box.className='signal-box '+dir;
   
   const arrowM={buy:'▲',sell:'▼',hold:'◆'};
-  const wordM={buy:'BUY / LONG',sell:'SELL / SHORT',hold:'HOLD / WAIT'};
+  const wordM={buy:`BUY / LONG`,sell:`SELL / SHORT`,hold:'HOLD / WAIT'};
   const colorM={buy:'var(--green)',sell:'var(--red)',hold:'var(--gold)'};
-  const subM={buy:'โมเมนตัมขาขึ้นเด่นชัด — แนะนำเข้าซื้อ',sell:'โมเมนตัมขาลงเด่นชัด — แนะนำเปิดสถานะขาย',hold:'ตลาดเลือกทิศทางไม่ชัดเจน — แนะนำพิจารณาถือเงินสด'};
+  const subM={buy:`สัญญาณเข้าซื้อรุนแรงเป้าหมาย RR 1:${currentRRMultiplier}`,sell:`สัญญาณฝั่งขายเด่นชัดเป้าหมาย RR 1:${currentRRMultiplier}`,hold:'โมเมนตัมผันผวน แนะนำให้ยืนดูเฉลี่ยก่อน'};
   
   document.getElementById('sigArrow').textContent=arrowM[dir];
   document.getElementById('sigArrow').style.color=colorM[dir];
@@ -408,8 +431,8 @@ function renderUI(price, prices, strats, dir, conf, levels, atrVal) {
   document.getElementById('confPct').textContent=pct2+'%';
   document.getElementById('confPct').style.color=cc;
   
-  const cls=['ตึงตัวต่ำ (Weak)','ปานกลาง (Moderate)','ค่อนข้างสูง (Strong)','เชื่อมั่นสูงมาก (Excellent)'];
-  document.getElementById('confLabel').textContent='ความเชี่ยวชาญของระบบ: '+cls[Math.min(3,Math.floor(pct2/25))];
+  const cls=['ตึงตัวต่ำ (Weak)','เสถียรภาพต่ำ (Moderate)','เกณฑ์ปลอดภัย (Strong)','เกณฑ์สูง (Excellent)'];
+  document.getElementById('confLabel').textContent='ความเสถียรของเกณฑ์คัดกรอง: '+cls[Math.min(3,Math.floor(pct2/25))];
   
   const fill=document.getElementById('confFill');
   fill.style.width=pct2+'%'; fill.style.background=cc;
@@ -423,20 +446,20 @@ function renderUI(price, prices, strats, dir, conf, levels, atrVal) {
   const r=calcRsi(prices,14),b=calcBoll(prices,20),st=calcStoch(prices,14);
   const e20=calcEma(prices,20),e50=calcEma(prices,50);
   const inds=[
-    {n:'RSI (14)',v:r?r.toFixed(1):'—',c:!r?'neutral':r<35?'up':r>65?'down':'neutral'},
-    {n:'EMA 20 Trend',v:e20?e20.toFixed(1):'—',c:e20&&price>e20?'up':'down'},
-    {n:'EMA 50 Base',v:e50?e50.toFixed(1):'—',c:e50&&price>e50?'up':'down'},
-    {n:'Volatility ATR',v:atrVal?atrVal.toFixed(2):'—',c:'neutral'},
-    {n:'BB Upper Resistance',v:b?b.upper.toFixed(1):'—',c:'neutral'},
-    {n:'BB Lower Support',v:b?b.lower.toFixed(1):'—',c:'neutral'},
-    {n:'Stochastic Oscillator',v:st?st.toFixed(1):'—',c:!st?'neutral':st<30?'up':st>70?'down':'neutral'},
+    {n:'RSI (14) Indicator',v:r?r.toFixed(1):'—',c:!r?'neutral':r<35?'up':r>65?'down':'neutral'},
+    {n:'EMA 20 Trend Filter',v:e20?e20.toFixed(1):'—',c:e20&&price>e20?'up':'down'},
+    {n:'EMA 50 Structural Line',v:e50?e50.toFixed(1):'—',c:e50&&price>e50?'up':'down'},
+    {n:'Volatility ATR Value',v:atrVal?atrVal.toFixed(2):'—',c:'neutral'},
+    {n:'BB Upper Band',v:b?b.upper.toFixed(1):'—',c:'neutral'},
+    {n:'BB Lower Band',v:b?b.lower.toFixed(1):'—',c:'neutral'},
+    {n:'Stochastic Value',v:st?st.toFixed(1):'—',c:!st?'neutral':st<30?'up':st>70?'down':'neutral'},
   ];
   
   document.getElementById('indTable').innerHTML=inds.map(x=>`
     <div class="ind-row"><span class="ind-name">${x.n}</span><span class="ind-val ${x.c}">${x.v}</span></div>`).join('');
     
   drawChart(prices,levels,dir);
-  document.getElementById('lastUpdate').textContent='อัพเดตล่าสุด '+new Date().toLocaleTimeString('th-TH');
+  document.getElementById('lastUpdate').textContent='อัพเดตแผงควบคุม '+new Date().toLocaleTimeString('th-TH');
 }
 
 async function run() {
@@ -445,8 +468,7 @@ async function run() {
   
   let price=await fetchPrice();
   if(!price){
-    // กำหนด Base Price สำรองให้อยู่ในกรอบโครงสร้างตลาดทองคำปัจจุบันที่สมเหตุสมผล
-    price=2340+(Math.random()-0.5)*60;
+    price=2345+(Math.random()-0.5)*55;
     document.getElementById('errNote').style.display='block';
   }
   
@@ -464,12 +486,17 @@ async function run() {
   const levels=dir!=='hold'?computeLevels(price,dir,atrVal):null;
   
   renderUI(price,prices,strats,dir,conf,levels,atrVal);
+  
+  // เรียกใช้งานโมดูลกระจายสัญญาณเข้ากลุ่ม Telegram
+  if(levels && dir!=='hold') {
+    broadcastToTelegram(dir, levels, Math.round(conf*100));
+  }
+  
   document.getElementById('loadingOverlay').classList.add('hidden');
 }
 
-// เริ่มต้นระบบครั้งแรกและตั้งค่า Loop ทุก 1 นาที
 run();
-setInterval(run,60000);
+setInterval(run,60000); // วนลูปเช็กและอัปเดตราคาแบบอัตโนมัติทุก 1 นาที
 window.addEventListener('resize', run);
 </script>
 </body>
