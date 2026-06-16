@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOLD Signal Live · Premium TradingView Terminal</title>
+<title>GOLD Signal Live · TVE Premium Terminal</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root {
@@ -22,8 +22,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .live-badge{display:flex;align-items:center;gap:6px;background:var(--green-dim);border:1px solid rgba(0,230,118,0.3);border-radius:20px;padding:4px 12px;font-size:11px;color:var(--green);font-family:'Space Mono',monospace;}
 .live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 1.5s ease-in-out infinite;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
-.header-right{display:flex;align-items:center;gap:12px;}
-#lastUpdate{font-size:11px;color:var(--text2);font-family:'Space Mono',monospace;}
 .layout{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 53px);}
 @media(max-width:960px){.layout{grid-template-columns:1fr;height:auto;}}
 .left{display:flex;flex-direction:column;overflow:hidden;background:#000;}
@@ -46,15 +44,21 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 }
 .select-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 
+/* 🔐 ตู้ล็อกสัญญาณ VIP อัปเกรดระบบแสดงผลแอนิเมชัน 3D */
 .signal-container-relative { position: relative; overflow: hidden; border-radius: 10px; }
 .signal-lock-overlay {
-  position: absolute; inset: 0; background: rgba(17, 17, 24, 0.97);
+  position: absolute; inset: 0; background: rgba(11, 11, 18, 0.98);
   border: 1px dashed var(--gold); border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 10; padding: 20px; text-align: center; backdrop-filter: blur(4px);
+  z-index: 10; padding: 20px; text-align: center; backdrop-filter: blur(6px);
+  transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-.lock-icon { font-size: 24px; color: var(--gold); margin-bottom: 8px; }
-.lock-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; color: var(--text); letter-spacing: 1px; }
+/* ✨ สไตล์กล่องคุมความโปร่งแสงของไฟล์วีดีโอ 3D */
+.tve-3d-animation {
+  width: 140px; height: 140px; object-fit: contain; margin-bottom: 4px;
+  mix-blend-mode: screen; pointer-events: none;
+}
+.lock-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: var(--gold); font-family: 'Space Mono', monospace; letter-spacing: 1px; }
 .lock-desc { font-size: 11px; color: var(--text2); margin-bottom: 14px; }
 .lock-input-group { display: flex; gap: 6px; width: 100%; max-width: 240px; }
 .lock-input {
@@ -148,7 +152,11 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       if (snapshot.exists()) {
         const userData = snapshot.val();
         isUnlocked = true;
-        document.getElementById('lockOverlay').style.display = 'none';
+        document.getElementById('lockOverlay').style.opacity = '0';
+        setTimeout(() => {
+          document.getElementById('lockOverlay').style.display = 'none';
+        }, 400);
+        
         const welcome = document.getElementById('welcomeUser');
         welcome.textContent = `Premium User: ${userData.customer_name}`;
         welcome.style.display = 'block';
@@ -208,12 +216,17 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <div class="sec-title">สัญญาณคัดกรองอัตโนมัติ</div>
       
       <div class="signal-container-relative">
+        
         <div class="signal-lock-overlay" id="lockOverlay">
-          <div class="lock-icon">🔒</div>
-          <div class="lock-title">PREMIUM SYSTEM</div>
-          <div class="lock-desc">กรอกรหัสผ่านเพื่อเข้าถึงจุดซื้อขาย VIP</div>
+          
+          <video class="tve-3d-animation" autoplay loop muted playsinline>
+            <source src="tve-3d.webm" type="video/webm">
+            </video>
+
+          <div class="lock-title">TVE ECOSYSTEM VIP</div>
+          <div class="lock-desc">กรอกรหัสผ่านควบคุมเพื่อเข้าถึงจุดสัญญาณเทรด</div>
           <div class="lock-input-group">
-            <input type="password" class="lock-input" id="pwdInput" placeholder="ENTER VIP PASS...">
+            <input type="password" class="lock-input" id="pwdInput" placeholder="ENTER PASSCODE...">
             <button class="lock-submit-btn" onclick="checkUnlockCode()">ตกลง</button>
           </div>
           <div class="lock-error" id="lockError">✖ ไม่พบรหัสผ่านนี้ในระบบฐานข้อมูล VIP</div>
@@ -282,7 +295,6 @@ let lastSentSignal = 'hold';
 let isUnlocked = false; 
 let tvWidget = null; 
 
-// ตัวแปรเก็บโครงสร้างแนวรับแนวต้านจริงที่ดึงมาจากแท่งเทียนรอบปัจจุบัน
 let liveHighestHigh = 0;
 let liveLowestLow = 0;
 
@@ -327,33 +339,27 @@ function changeRR(ratio) {
   run();
 }
 
-// 🌐 ดึงข้อมูลราคาล่าสุดและประวัติราคาย้อนหลังเพื่อแกะโครงสร้างแนวรับแนวต้านของจริง
 async function fetchPriceAndStructure() {
   try {
     let binanceInterval = '15m';
     if (currentTimeframeMinutes === '60') binanceInterval = '1h';
     if (currentTimeframeMinutes === '240') binanceInterval = '4h';
 
-    // ดึงข้อมูลแท่งเทียนจริงย้อนหลัง 40 แท่งจากตลาด
     const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${binanceInterval}&limit=40`);
     if (r.ok) {
       const klines = await r.json();
-      
-      // คัดลอกเฉพาะราคาสูงสุด (High) และต่ำสุด (Low) ของแท่งเทียนจริงมาคำนวณ
       const highs = klines.map(c => parseFloat(c[2]));
       const lows = klines.map(c => parseFloat(c[3]));
       
-      // ล็อกค่าแนวต้านแท้จริง (จุดสูงสุดเดิม) และแนวรับแท้จริง (จุดต่ำสุดเดิม) ตามรอบเวลานั้น ๆ
       liveHighestHigh = Math.max(...highs);
       liveLowestLow = Math.min(...lows);
 
-      // คืนค่าราคาล่าสุด ณ ปัจจุบัน (ราคาปิดแท่งล่าสุด)
       return parseFloat(klines[klines.length - 1][4]);
     }
   } catch(e) {
     console.error("Error loading structure:", e);
   }
-  return 2345.50; // ราคาฐานสำรองกรณี API ตัดการเชื่อมต่อ
+  return 2345.50; 
 }
 
 function analyze() {
@@ -367,24 +373,22 @@ function analyze() {
   return results;
 }
 
-// 🧠 ฟังก์ชันพล็อตระดับราคาอ้างอิงจากแนวรับ-แนวต้านตลาดจริง
 function computeDynamicLevels(price, dir) {
   let snrPrice = 0; 
   let slPrice = 0;
   let tpPrice = 0;
   let label = "KEY LEVEL";
 
-  // หากราคาปัจจุบันหลุดกรอบสถิติ ให้ขยับระยะปลอดภัยบัฟเฟอร์กันหน้าทุน
   if (dir === 'buy') {
     label = "SUPPORT (แนวรับจริง)";
-    snrPrice = liveLowestLow;          // ดึงค่าแนวรับต่ำสุดของแท่งเทียนจริงในรอบเวลานั้นมาใช้งาน
-    slPrice = snrPrice - 1.20;         // ตั้งจุด SL ต่ำกว่าแนวรับจริงลงไปเล็กน้อยเพื่อป้องกันไส้เทียนสะบัดกินทุน
-    const riskDist = price - slPrice;   // คำนวณความเสี่ยงจริง
-    tpPrice = price + (riskDist * currentRRMultiplier); // พล็อตเป้าหมายกำไรตามอัตราทด R:R จริง
+    snrPrice = liveLowestLow;          
+    slPrice = snrPrice - 1.20;         
+    const riskDist = price - slPrice;   
+    tpPrice = price + (riskDist * currentRRMultiplier); 
   } else if (dir === 'sell') {
     label = "RESISTANCE (แนวต้านจริง)";
-    snrPrice = liveHighestHigh;        // ดึงค่าแนวต้านสูงสุดของแท่งเทียนจริงในรอบเวลานั้นมาใช้งาน
-    slPrice = snrPrice + 1.20;         // ตั้งจุด SL สูงกว่าแนวต้านจริงขึ้นไป
+    snrPrice = liveHighestHigh;        
+    slPrice = snrPrice + 1.20;         
     const riskDist = slPrice - price; 
     tpPrice = price - (riskDist * currentRRMultiplier); 
   }
@@ -456,7 +460,6 @@ function renderUI(price, strats, dir, levels) {
 }
 
 async function run() {
-  // ดึงค่าและประมวลผลข้อมูลราคาและโครงสร้าง SnR จริงจากตลาด
   let price = await fetchPriceAndStructure();
   const strats = analyze();
   
