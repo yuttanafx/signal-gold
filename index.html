@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOLD Signal Live · TVE Premium Terminal</title>
+<title>GOLD Signal Live · Premium TradingView Terminal</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root {
@@ -44,23 +44,18 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 }
 .select-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 
-/* 🔐 ตู้ล็อกสัญญาณ VIP อัปเกรดระบบแสดงผลแอนิเมชัน 3D */
+/* 🔐 หน้ากากบดบังกล่องสัญญาณ VIP แบบคลีน สะอาดตา */
 .signal-container-relative { position: relative; overflow: hidden; border-radius: 10px; }
 .signal-lock-overlay {
-  position: absolute; inset: 0; background: rgba(11, 11, 18, 0.98);
+  position: absolute; inset: 0; background: rgba(17, 17, 24, 0.98);
   border: 1px dashed var(--gold); border-radius: 10px;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  z-index: 10; padding: 20px; text-align: center; backdrop-filter: blur(6px);
+  z-index: 10; padding: 25px; text-align: center; backdrop-filter: blur(4px);
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
-
-/* ✨ คอนเทนเนอร์คุมกรอบอนิเมชั่น 3D ให้สมส่วนตามสัดส่วนโมเดล */
-.tve-3d-animation {
-  width: 140px; height: 140px; object-fit: contain; margin-bottom: 8px;
-  pointer-events: none;
-}
-.lock-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; color: var(--gold); font-family: 'Space Mono', monospace; letter-spacing: 1px; }
-.lock-desc { font-size: 11px; color: var(--text2); margin-bottom: 14px; }
+.lock-icon { font-size: 28px; color: var(--gold); margin-bottom: 12px; }
+.lock-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; color: var(--gold); font-family: 'Space Mono', monospace; letter-spacing: 1px; }
+.lock-desc { font-size: 11px; color: var(--text2); margin-bottom: 18px; }
 .lock-input-group { display: flex; gap: 6px; width: 100%; max-width: 240px; }
 .lock-input {
   flex: 1; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
@@ -218,16 +213,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       
       <div class="signal-container-relative">
         
-        <!-- 🔐 หน้ากากบดบังกล่องสัญญาณหลัก + ฝังระบบดึงวิดีโอเหรียญ 3D หมุนวนโปร่งแสงออนไลน์โดยตรงผ่านเน็ตชัวร์ 100% -->
+        <!-- 🔐 หน้ากากบดบังกล่องสัญญาณ VIP เวอร์ชันความปลอดภัยมาตรฐาน โหลดไว ไม่กินสเปก -->
         <div class="signal-lock-overlay" id="lockOverlay">
-          
-          <!-- 🎥 ดึงไฟล์วิดีโอเหรียญหมุน 3D สีทองพรีเมียมจาก Cloud Host เปิดเครื่องไหนก็เด้งอัตโนมัติแน่นอน -->
-          <video class="tve-3d-animation" autoplay loop muted playsinline webkit-playsinline preload="auto">
-            <source src="https://assets.mixkit.co/videos/preview/mixkit-gold-coin-with-dollar-sign-rotating-41549-large.mp4" type="video/mp4">
-            <!-- แผนสำรองกรณีเครือข่ายโหลดดีเลย์ ดึงภาพอนิเมชั่นจิฟออนไลน์มาแทนทันที -->
-            <img src="https://i.gifer.com/74X8.gif" class="tve-3d-animation" alt="TVE 3D Platform">
-          </video>
-
+          <div class="lock-icon">🔒</div>
           <div class="lock-title">TVE ECOSYSTEM VIP</div>
           <div class="lock-desc">กรอกรหัสผ่านควบคุมเพื่อเข้าถึงจุดสัญญาณเทรด</div>
           <div class="lock-input-group">
