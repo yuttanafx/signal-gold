@@ -173,7 +173,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       }
     }).catch((error) => {
       console.error(error);
-      alert("เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล");
+      alert("ไม่สามารถเข้าถึงสิทธิ์ VIP ได้ กรุณาเช็ก Rules ใน Firebase หรือตัวรหัสผ่านอีกครั้งครับ");
     });
   }
 </script>
@@ -271,7 +271,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           </div>
           <div class="rr-display">
             <div class="rr-row"><span class="rr-k">Risk : Reward Target</span><span class="rr-v" id="rrRatioText" style="color:var(--gold)">1 : 2</span></div>
-            <!-- 🏷️ ปรับปรุงหน่วยการแสดงผลด้านล่างนี้ให้กลายเป็นหน่วย PIPs / Points เรียบร้อยครับ -->
             <div class="rr-row"><span class="rr-k" id="riskLabelText">Risk Distance</span><span class="rr-v down" id="rrRisk">—</span></div>
             <div class="rr-row"><span class="rr-k" id="rewardLabelText">Reward Distance</span><span class="rr-v up" id="rrReward">—</span></div>
             <div class="rr-bar-wrap">
@@ -451,7 +450,7 @@ function renderUI(price, strats, dir, levels) {
   
   const arrowM={buy:'▲',sell:'▼',hold:'◆'};
   const wordM={buy:'BUY / LONG',sell:'SELL / SHORT',hold:'HOLD / WAIT'};
-  const colorM={buy:'var(--green)',sell(--red)':'var(--red)',hold:'var(--gold)'};
+  const colorM={buy:'var(--green)',sell:'var(--red)',hold:'var(--gold)'};
   
   document.getElementById('sigArrow').textContent = arrowM[dir];
   document.getElementById('sigArrow').style.color = colorM[dir];
@@ -466,29 +465,24 @@ function renderUI(price, strats, dir, levels) {
     document.getElementById('lvSL').textContent = fmt(levels.sl);
     document.getElementById('lvTP').textContent = fmt(levels.tp);
 
-    // 🧠 สูตรคณิตศาสตร์แปลงค่าส่วนต่างราคาดิบให้กลายเป็นหน่วย PIPs / Points สากล
     let riskPips = 0;
     let rewardPips = 0;
     let unitLabel = "PIPs";
 
     if (currentAsset === 'EURUSD') {
-      // Forex: ราคาหลักที่ 4 ทศนิยมคือ 1 PIP
       riskPips = levels.risk / 0.0001;
       rewardPips = levels.reward / 0.0001;
       unitLabel = "PIPs";
     } else if (currentAsset === 'XAUUSD') {
-      // ทองคำ: ทศนิยมตำแหน่งที่ 1 คือ 1 PIP (เช่น ระยะห่าง $10.00 = 100 PIPs)
       riskPips = levels.risk / 0.1;
       rewardPips = levels.reward / 0.1;
       unitLabel = "PIPs";
     } else {
-      // คริปโต (BTC/ETH): วัดระยะตามจำนวนเนื้อค่าดอลลาร์ตรง ๆ (Points)
       riskPips = levels.risk;
       rewardPips = levels.reward;
       unitLabel = "Points";
     }
 
-    // อัปเดตข้อความหัวข้อและตัวเลขหน่วย PIPs ลงหน้าจอหลัก
     document.getElementById('riskLabelText').textContent = `Risk Size (${unitLabel})`;
     document.getElementById('rewardLabelText').textContent = `Reward Size (${unitLabel})`;
     
