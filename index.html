@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GOLD Signal Live · Premium TradingView Terminal</title>
+<title>TVE Global Signal · Multi-Asset Terminal</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
 :root {
@@ -36,6 +36,17 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .sec{padding:18px;border-bottom:1px solid var(--border);}
 .sec-title{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:14px;}
 
+.asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.asset-btn {
+  padding: 10px; background: var(--panel2); border: 1px solid var(--border);
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 12px;
+  font-weight: 700; border-radius: 6px; cursor: pointer; text-align: left;
+  display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
+}
+.asset-btn span.type-badge { font-size: 8px; background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--text2); text-transform: uppercase; }
+.asset-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+.asset-btn.active span.type-badge { background: var(--gold); color: var(--bg); }
+
 .selector-wrap { display: flex; gap: 6px; margin-bottom: 12px; }
 .select-btn {
   flex: 1; padding: 8px; background: var(--panel2); border: 1px solid var(--border);
@@ -44,7 +55,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 }
 .select-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 
-/* 🔐 หน้ากากบดบังกล่องสัญญาณ VIP แบบคลีน สะอาดตา */
 .signal-container-relative { position: relative; overflow: hidden; border-radius: 10px; }
 .signal-lock-overlay {
   position: absolute; inset: 0; background: rgba(17, 17, 24, 0.98);
@@ -171,7 +181,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 <body>
 
 <div class="header">
-  <div class="logo">◈ XAU/USD <small>Live TradingView Terminal</small></div>
+  <div class="logo">◈ TVE GLOBAL SIGNAL <small>Live Multi-Asset Terminal</small></div>
   <div class="header-right">
     <div class="live-badge"><div class="live-dot"></div>LIVE DATA FEED</div>
     <div id="lastUpdate">—</div>
@@ -181,15 +191,25 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   <div class="left">
     <div class="price-bar">
       <div>
-        <div class="price-label">GOLD SPOT / U.S. DOLLAR</div>
+        <div class="price-label" id="assetLabelDisplay">GOLD SPOT / U.S. DOLLAR</div>
         <div class="price-big" id="priceDisplay">—</div>
-        <div class="price-sub">ราคาทองคำแท่งเทียนอ้างอิง Real-time ตลาดโลก</div>
+        <div class="price-sub">ราคาแท่งเทียนอ้างอิง Real-time อัพเดตตามโครงสร้างตลาดจริง</div>
       </div>
     </div>
     <div class="chart-container-tv" id="tv_chart_container"></div>
   </div>
   
   <div class="sidebar">
+    <div class="sec">
+      <div class="sec-title">เลือกสินทรัพย์ตรวจสัญญาณ (Select Asset)</div>
+      <div class="asset-grid">
+        <button class="asset-btn active" id="asset-XAUUSD" onclick="changeAsset('XAUUSD')">💰 XAUUSD <span class="type-badge">Gold</span></button>
+        <button class="asset-btn" id="asset-BTCUSD" onclick="changeAsset('BTCUSD')">₿ BTCUSD <span class="type-badge">Crypto</span></button>
+        <button class="asset-btn" id="asset-ETHUSD" onclick="changeAsset('ETHUSD')">♦ ETHUSD <span class="type-badge">Crypto</span></button>
+        <button class="asset-btn" id="asset-EURUSD" onclick="changeAsset('EURUSD')">🇪🇺 EURUSD <span class="type-badge">Forex</span></button>
+      </div>
+    </div>
+
     <div class="sec">
       <div class="sec-title">เลือกไทม์เฟรมสัญญาณ (Timeframe)</div>
       <div class="selector-wrap">
@@ -212,8 +232,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <div class="sec-title">สัญญาณคัดกรองอัตโนมัติ</div>
       
       <div class="signal-container-relative">
-        
-        <!-- 🔐 หน้ากากบดบังกล่องสัญญาณ VIP เวอร์ชันความปลอดภัยมาตรฐาน โหลดไว ไม่กินสเปก -->
         <div class="signal-lock-overlay" id="lockOverlay">
           <div class="lock-icon">🔒</div>
           <div class="lock-title">TVE ECOSYSTEM VIP</div>
@@ -253,8 +271,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           </div>
           <div class="rr-display">
             <div class="rr-row"><span class="rr-k">Risk : Reward Target</span><span class="rr-v" id="rrRatioText" style="color:var(--gold)">1 : 2</span></div>
-            <div class="rr-row"><span class="rr-k">Risk (SL dist)</span><span class="rr-v down" id="rrRisk">—</span></div>
-            <div class="rr-row"><span class="rr-k">Reward (TP dist)</span><span class="rr-v up" id="rrReward">—</span></div>
+            <!-- 🏷️ ปรับปรุงหน่วยการแสดงผลด้านล่างนี้ให้กลายเป็นหน่วย PIPs / Points เรียบร้อยครับ -->
+            <div class="rr-row"><span class="rr-k" id="riskLabelText">Risk Distance</span><span class="rr-v down" id="rrRisk">—</span></div>
+            <div class="rr-row"><span class="rr-k" id="rewardLabelText">Reward Distance</span><span class="rr-v up" id="rrReward">—</span></div>
             <div class="rr-bar-wrap">
               <div class="rr-bar"><div class="rr-seg-risk"></div><div class="rr-seg-reward" id="rrBarReward" style="flex:2"></div></div>
             </div>
@@ -282,6 +301,7 @@ const TELEGRAM_CONFIG = {
   enabled: false                 
 };
 
+let currentAsset = 'XAUUSD'; 
 let currentRRMultiplier = 2; 
 let currentTimeframeMinutes = '15'; 
 let lastSentSignal = 'hold';  
@@ -291,11 +311,18 @@ let tvWidget = null;
 let liveHighestHigh = 0;
 let liveLowestLow = 0;
 
+const assetMap = {
+  XAUUSD: { tvSymbol: "FX_IDC:XAUUSD", binanceSymbol: "PAXGUSDT", label: "GOLD SPOT / U.S. DOLLAR" },
+  BTCUSD: { tvSymbol: "BINANCE:BTCUSDT", binanceSymbol: "BTCUSDT", label: "BITCOIN / U.S. DOLLAR" },
+  ETHUSD: { tvSymbol: "BINANCE:ETHUSDT", binanceSymbol: "ETHUSDT", label: "ETHEREUM / U.S. DOLLAR" },
+  EURUSD: { tvSymbol: "FX:EURUSD", binanceSymbol: "EURUSDT", label: "EURO / U.S. DOLLAR" }
+};
+
 function updateTradingViewChart() {
   tvWidget = new TradingView.widget({
     "width": "100%",
     "height": "100%",
-    "symbol": "FX_IDC:XAUUSD", 
+    "symbol": assetMap[currentAsset].tvSymbol, 
     "interval": currentTimeframeMinutes, 
     "timezone": "Asia/Bangkok", 
     "theme": "dark", 
@@ -311,6 +338,16 @@ function updateTradingViewChart() {
       "MASimple@tv-basicstudies" 
     ]
   });
+}
+
+function changeAsset(assetKey) {
+  currentAsset = assetKey;
+  Object.keys(assetMap).forEach(key => {
+    document.getElementById(`asset-${key}`).classList.toggle('active', key === assetKey);
+  });
+  document.getElementById('assetLabelDisplay').textContent = assetMap[currentAsset].label;
+  updateTradingViewChart(); 
+  run(); 
 }
 
 function changeTF(tfMinutes) {
@@ -338,7 +375,8 @@ async function fetchPriceAndStructure() {
     if (currentTimeframeMinutes === '60') binanceInterval = '1h';
     if (currentTimeframeMinutes === '240') binanceInterval = '4h';
 
-    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${binanceInterval}&limit=40`);
+    const symbol = assetMap[currentAsset].binanceSymbol;
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceInterval}&limit=40`);
     if (r.ok) {
       const klines = await r.json();
       const highs = klines.map(c => parseFloat(c[2]));
@@ -352,7 +390,7 @@ async function fetchPriceAndStructure() {
   } catch(e) {
     console.error("Error loading structure:", e);
   }
-  return 2345.50; 
+  return currentAsset.includes('BTC') ? 67000.00 : currentAsset.includes('ETH') ? 3500.00 : 2345.50; 
 }
 
 function analyze() {
@@ -372,16 +410,18 @@ function computeDynamicLevels(price, dir) {
   let tpPrice = 0;
   let label = "KEY LEVEL";
 
+  let buffer = price * 0.0005; 
+
   if (dir === 'buy') {
     label = "SUPPORT (แนวรับจริง)";
     snrPrice = liveLowestLow;          
-    slPrice = snrPrice - 1.20;         
+    slPrice = snrPrice - buffer;         
     const riskDist = price - slPrice;   
     tpPrice = price + (riskDist * currentRRMultiplier); 
   } else if (dir === 'sell') {
     label = "RESISTANCE (แนวต้านจริง)";
     snrPrice = liveHighestHigh;        
-    slPrice = snrPrice + 1.20;         
+    slPrice = snrPrice + buffer;         
     const riskDist = slPrice - price; 
     tpPrice = price - (riskDist * currentRRMultiplier); 
   }
@@ -391,31 +431,33 @@ function computeDynamicLevels(price, dir) {
 
   return {
     snrLabel: label,
-    snr: +snrPrice.toFixed(2),
+    snr: +snrPrice.toFixed(4),
     entry: price,
-    sl: +slPrice.toFixed(2),
-    tp: +tpPrice.toFixed(2),
-    risk: +risk.toFixed(2),
-    reward: +reward.toFixed(2)
+    sl: +slPrice.toFixed(4),
+    tp: +tpPrice.toFixed(4),
+    risk: +risk.toFixed(4),
+    reward: +reward.toFixed(4)
   };
 }
 
 function renderUI(price, strats, dir, levels) {
-  const fmt=v=>v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-  document.getElementById('priceDisplay').textContent = `$${fmt(price)}`;
+  let decimalPlaces = currentAsset === 'EURUSD' ? 4 : 2;
+  const fmt = v => v.toLocaleString('en-US', { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces });
+  
+  document.getElementById('priceDisplay').textContent = `${currentAsset === 'EURUSD' ? '' : '$'}${fmt(price)}`;
   
   const box = document.getElementById('signalBox');
   box.className = 'signal-box ' + dir;
   
   const arrowM={buy:'▲',sell:'▼',hold:'◆'};
   const wordM={buy:'BUY / LONG',sell:'SELL / SHORT',hold:'HOLD / WAIT'};
-  const colorM={buy:'var(--green)',sell:'var(--red)',hold:'var(--gold)'};
+  const colorM={buy:'var(--green)',sell(--red)':'var(--red)',hold:'var(--gold)'};
   
   document.getElementById('sigArrow').textContent = arrowM[dir];
   document.getElementById('sigArrow').style.color = colorM[dir];
   document.getElementById('sigWord').textContent = wordM[dir];
   document.getElementById('sigWord').style.color = colorM[dir];
-  document.getElementById('sigSub').textContent = `สแกนโครงสร้างแนวรับ-แนวต้านสำเร็จ`;
+  document.getElementById('sigSub').textContent = `สแกนตลาดและโครงสร้างราคาของ ${currentAsset} สำเร็จ`;
 
   if(levels && dir!=='hold' && isUnlocked){
     document.getElementById('snrLabel').textContent = levels.snrLabel;
@@ -423,8 +465,35 @@ function renderUI(price, strats, dir, levels) {
     document.getElementById('lvEntry').textContent = fmt(levels.entry);
     document.getElementById('lvSL').textContent = fmt(levels.sl);
     document.getElementById('lvTP').textContent = fmt(levels.tp);
-    document.getElementById('rrRisk').textContent = '-' + levels.risk.toFixed(2) + ' USD';
-    document.getElementById('rrReward').textContent = '+' + levels.reward.toFixed(2) + ' USD';
+
+    // 🧠 สูตรคณิตศาสตร์แปลงค่าส่วนต่างราคาดิบให้กลายเป็นหน่วย PIPs / Points สากล
+    let riskPips = 0;
+    let rewardPips = 0;
+    let unitLabel = "PIPs";
+
+    if (currentAsset === 'EURUSD') {
+      // Forex: ราคาหลักที่ 4 ทศนิยมคือ 1 PIP
+      riskPips = levels.risk / 0.0001;
+      rewardPips = levels.reward / 0.0001;
+      unitLabel = "PIPs";
+    } else if (currentAsset === 'XAUUSD') {
+      // ทองคำ: ทศนิยมตำแหน่งที่ 1 คือ 1 PIP (เช่น ระยะห่าง $10.00 = 100 PIPs)
+      riskPips = levels.risk / 0.1;
+      rewardPips = levels.reward / 0.1;
+      unitLabel = "PIPs";
+    } else {
+      // คริปโต (BTC/ETH): วัดระยะตามจำนวนเนื้อค่าดอลลาร์ตรง ๆ (Points)
+      riskPips = levels.risk;
+      rewardPips = levels.reward;
+      unitLabel = "Points";
+    }
+
+    // อัปเดตข้อความหัวข้อและตัวเลขหน่วย PIPs ลงหน้าจอหลัก
+    document.getElementById('riskLabelText').textContent = `Risk Size (${unitLabel})`;
+    document.getElementById('rewardLabelText').textContent = `Reward Size (${unitLabel})`;
+    
+    document.getElementById('rrRisk').textContent = `${riskPips.toFixed(1)} ${unitLabel}`;
+    document.getElementById('rrReward').textContent = `${rewardPips.toFixed(1)} ${unitLabel}`;
   } else {
     document.getElementById('snrLabel').textContent = 'KEY LEVEL (แนวรับต้าน)';
     document.getElementById('lvSnr').textContent = '🔒 LOCKED';
@@ -433,6 +502,8 @@ function renderUI(price, strats, dir, levels) {
     document.getElementById('lvTP').textContent = '🔒 LOCKED';
     document.getElementById('rrRisk').textContent = '—';
     document.getElementById('rrReward').textContent = '—';
+    document.getElementById('riskLabelText').textContent = 'Risk Distance';
+    document.getElementById('rewardLabelText').textContent = 'Reward Distance';
   }
 
   document.getElementById('stratPills').innerHTML = strats.map(s=>`
@@ -442,14 +513,14 @@ function renderUI(price, strats, dir, levels) {
     </div>`).join('');
 
   const inds = [
-    {n:'RSI Realtime Filter', v:'ACTIVE', c:'up'},
-    {n:'Structure SnR Line', v:'LIVE LOCKED', c:'up'},
+    {n:'Asset Realtime Link', v: currentAsset, c:'up'},
+    {n:'Structure SnR Line', v:'LIVE CALC', c:'up'},
     {n:'TradingView Data Link', v:'ONLINE', c:'up'}
   ];
   document.getElementById('indTable').innerHTML = inds.map(x=>`
     <div class="ind-row"><span class="ind-name">${x.n}</span><span class="ind-val ${x.c}">${x.v}</span></div>`).join('');
     
-  document.getElementById('lastUpdate').textContent = 'ซิงค์ระบบคลาวด์ ' + new Date().toLocaleTimeString('th-TH');
+  document.getElementById('lastUpdate').textContent = 'ซิงค์คลาวด์ ' + new Date().toLocaleTimeString('th-TH');
 }
 
 async function run() {
@@ -472,28 +543,29 @@ async function run() {
 
 async function broadcastToTelegram(dir, levels) {
   if (TELEGRAM_CONFIG.token.includes('ใส่_')) return;
-  const currentKey = `${dir}_${currentTimeframeMinutes}`;
+  const currentKey = `${dir}_${currentAsset}_${currentTimeframeMinutes}`;
   if (lastSentSignal === currentKey) return;
 
   const emoji = dir === 'buy' ? '🟢 [BUY / LONG]' : '🔴 [SELL / SHORT]';
   const timeStr = new Date().toLocaleTimeString('th-TH');
   let tfText = currentTimeframeMinutes === '15' ? 'M15' : currentTimeframeMinutes === '60' ? 'H1' : 'H4';
   
+  let pipsVal = currentAsset === 'EURUSD' ? levels.risk / 0.0001 : currentAsset === 'XAUUSD' ? levels.risk / 0.1 : levels.risk;
+  let unit = currentAsset.includes('USD') && !currentAsset.includes('XAU') && !currentAsset.includes('EUR') ? 'Points' : 'PIPs';
+
   const text = encodeURIComponent(
-`✨ *GOLD VIP SIGNAL (XAU/USD)* ✨
+`✨ *TVE VIP SIGNAL (${currentAsset})* ✨
 ⏱️ ไทม์เฟรม: *${tfText}*
-⏰ เวลาอัปเดต: ${timeStr} (BKK)
 🎯 ทิศทาง: ${emoji}
 ⚖️ แผนอัตราทด: *RR 1:${currentRRMultiplier}*
 
-📌 *ระดับราคาอ้างอิงโครงสร้างตลาดจริง:*
-• ${levels.snrLabel}: $${levels.snr.toLocaleString()}
-• ENTRY (ราคาเข้าซื้อ): $${levels.entry.toLocaleString()}
-• STOP LOSS (ใช้แนวรับต้านตั้ง): $${levels.sl.toLocaleString()}
-• TAKE PROFIT (คำนวณตาม RR): $${levels.tp.toLocaleString()}
+📌 *ระดับราคาตั้งค่าอ้างอิง:*
+• ENTRY: ${levels.entry}
+• STOP LOSS: ${levels.sl}
+• TAKE PROFIT: ${levels.tp}
 
-📊 ระยะสเกลความเสี่ยง: ${levels.risk} USD
-_คำเตือน: วางแผนการเงินก่อนออกออเดอร์ทุกครั้ง (ระบบวิเคราะห์โครงสร้างราคาอัตโนมัติ)_`
+📊 ระยะตัดขาดทุน: ${pipsVal.toFixed(1)} ${unit}
+⏰ เวลาอัปเดต: ${timeStr} (BKK)`
   );
 
   const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${text}&parse_mode=Markdown`;
