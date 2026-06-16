@@ -29,8 +29,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .user-info .pass{color:var(--gold);font-size:12px;margin-top:2px;}
 .del-btn{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,68,68,0.2);padding:6px 12px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;}
 .del-btn:hover{background:rgba(255,68,68,0.25);}
-
-/* หน้าต่างล็อกสิทธิ์สำหรับเจ้าของเว็บ (แอดมิน) */
 .admin-gate-lock {
   position:fixed; inset:0; background:var(--bg); z-index:999;
   display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;
@@ -41,24 +39,26 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+  // ตัดปัญหาเรื่องระบุลิงก์ผิดพลาด โดยตัดบรรดับ databaseURL ออกเพื่อให้ระบบค้นหาเองผ่านโปรเจกต์ ID
   const firebaseConfig = {
     apiKey: "AIzaSyBK-t9u01YPYaKC2PhSUbY-1Mwf68zlAjg",
     authDomain: "gold-signal-vip-c2f0a.firebaseapp.com",
-    databaseURL: "https://gold-signal-vip-c2f0a-default-rtdb.asia-southeast1.firebasedatabase.app", 
     projectId: "gold-signal-vip-c2f0a",
-    storageBucket: "gold-signal-vip-c2f0a.firebasestorage.app"
+    storageBucket: "gold-signal-vip-c2f0a.firebasestorage.app",
+    messagingSenderId: "550763507298",
+    appId: "1:550763507298:web:11d4e65a22ccc55fd22b3b",
+    measurementId: "G-3BVD9L4J86"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // ⚠️ รหัสสำหรับตัวแอดมินเอง เพื่อใช้ล็อกอินเข้าหน้าควบคุมนี้ (เปลี่ยนได้ตามใจชอบครับ)
   const SUPER_ADMIN_PASSWORD = "Pichai@223"; 
 
   window.verifyAdmin = function() {
     const input = document.getElementById('adminGatePass').value;
     if(input === SUPER_ADMIN_PASSWORD) {
-      document.getElementById('adminGate').style.display = 'none'; // ปลดล็อกหน้าแอดมิน
+      document.getElementById('adminGate').style.display = 'none';
     } else {
       alert("รหัสผ่านผู้ดูแลระบบไม่ถูกต้อง!");
     }
@@ -80,6 +80,9 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     }).then(() => {
       document.getElementById('custName').value = '';
       document.getElementById('custPass').value = '';
+    }).catch((err) => {
+      console.error(err);
+      alert("เชื่อมต่อ Firebase ล้มเหลว! กรุณาตรวจสอบว่าแอดมินเปิดกฎ Rules ใน Firebase ให้เป็น true แล้วหรือยังครับ");
     });
   }
 
@@ -117,18 +120,17 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 </head>
 <body>
 
-<!-- หน้าต่างล็อกป้องกันไม่ให้ลูกค้าแอบเข้ามาหน้าแอดมินบน Vercel -->
 <div class="admin-gate-lock" id="adminGate">
   <div style="font-size:24px; margin-bottom:10px;">🔒</div>
   <div style="font-family:'Space Mono',monospace; font-size:14px; color:var(--gold); margin-bottom:15px; letter-spacing:1px;">ADMIN KEY REQUIRED</div>
-  <div style="display:flex; gap:8px; width:100%; max-width:28px0; max-width: 260px;">
+  <div style="display:flex; gap:8px; width:100%; max-width:260px;">
     <input type="password" id="adminGatePass" class="input" placeholder="กรอกรหัสแอดมิน..." style="text-align:center;">
     <button onclick="verifyAdmin()" class="add-btn" style="background:var(--gold);">ยืนยัน</button>
   </div>
 </div>
 
 <div class="admin-container">
-  <div class="title">⚙️ GOLD SIGNAL PANEL <span style="font-size:11px; color:var(--text2);">Firebase Realtime DB Active</span></div>
+  <div class="title">⚙️ GOLD SIGNAL PANEL <span style="font-size:11px; color:var(--text2);">Firebase Auto-Routing</span></div>
   
   <div class="form-box">
     <div class="form-group">
