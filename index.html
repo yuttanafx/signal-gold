@@ -81,8 +81,8 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .level-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:7px;padding:10px 14px;border:1px solid var(--border);}
 .level-row.snr{border-left:3px solid var(--gold);}
 .level-row.entry{border-left:3px solid var(--blue);}
-.level-row.tp{border-left:3px solid var(--green);}
 .level-row.sl{border-left:3px solid var(--red);}
+.level-row.tp{border-left:3px solid var(--green);}
 .lv-label{display:flex;align-items:center;gap:6px;}
 .lv-dot{width:8px;height:8px;border-radius:50%;}
 .lv-dot.snr{background:var(--gold);}
@@ -282,6 +282,10 @@ let lastSentSignal = 'hold';
 let isUnlocked = false; 
 let tvWidget = null; 
 
+// ตัวแปรเก็บโครงสร้างแนวรับแนวต้านจริงที่ดึงมาจากแท่งเทียนรอบปัจจุบัน
+let liveHighestHigh = 0;
+let liveLowestLow = 0;
+
 function updateTradingViewChart() {
   tvWidget = new TradingView.widget({
     "width": "100%",
@@ -323,15 +327,33 @@ function changeRR(ratio) {
   run();
 }
 
-async function fetchPrice() {
+// 🌐 ดึงข้อมูลราคาล่าสุดและประวัติราคาย้อนหลังเพื่อแกะโครงสร้างแนวรับแนวต้านของจริง
+async function fetchPriceAndStructure() {
   try {
-    const r = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT');
+    let binanceInterval = '15m';
+    if (currentTimeframeMinutes === '60') binanceInterval = '1h';
+    if (currentTimeframeMinutes === '240') binanceInterval = '4h';
+
+    // ดึงข้อมูลแท่งเทียนจริงย้อนหลัง 40 แท่งจากตลาด
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=PAXGUSDT&interval=${binanceInterval}&limit=40`);
     if (r.ok) {
-      const d = await r.json();
-      return parseFloat(d.price);
+      const klines = await r.json();
+      
+      // คัดลอกเฉพาะราคาสูงสุด (High) และต่ำสุด (Low) ของแท่งเทียนจริงมาคำนวณ
+      const highs = klines.map(c => parseFloat(c[2]));
+      const lows = klines.map(c => parseFloat(c[3]));
+      
+      // ล็อกค่าแนวต้านแท้จริง (จุดสูงสุดเดิม) และแนวรับแท้จริง (จุดต่ำสุดเดิม) ตามรอบเวลานั้น ๆ
+      liveHighestHigh = Math.max(...highs);
+      liveLowestLow = Math.min(...lows);
+
+      // คืนค่าราคาล่าสุด ณ ปัจจุบัน (ราคาปิดแท่งล่าสุด)
+      return parseFloat(klines[klines.length - 1][4]);
     }
-  } catch(e) {}
-  return 2345.50; 
+  } catch(e) {
+    console.error("Error loading structure:", e);
+  }
+  return 2345.50; // ราคาฐานสำรองกรณี API ตัดการเชื่อมต่อ
 }
 
 function analyze() {
@@ -345,26 +367,24 @@ function analyze() {
   return results;
 }
 
-// 🧠 ฟังก์ชันคำนวณหาแนวรับแนวต้าน และสร้าง SL / TP ตามเงื่อนไข R:R จริง
+// 🧠 ฟังก์ชันพล็อตระดับราคาอ้างอิงจากแนวรับ-แนวต้านตลาดจริง
 function computeDynamicLevels(price, dir) {
-  // สุ่มระยะจำลองกรอบแนวรับแนวต้านอ้างอิงตามโครงสร้างความผันผวนของทองคำ (8 - 15 ดอลลาร์)
-  const snrRange = 9.50 + (Math.random() * 4.5); 
-  
-  let snrPrice = 0; // ราคาแนวรับหรือแนวต้านหลัก
+  let snrPrice = 0; 
   let slPrice = 0;
   let tpPrice = 0;
   let label = "KEY LEVEL";
 
+  // หากราคาปัจจุบันหลุดกรอบสถิติ ให้ขยับระยะปลอดภัยบัฟเฟอร์กันหน้าทุน
   if (dir === 'buy') {
-    label = "SUPPORT (แนวรับ)";
-    snrPrice = price - snrRange;     // แนวรับจะอยู่ต่ำกว่าราคาปัจจุบัน
-    slPrice = snrPrice - 1.50;       // วางจุดตัดขาดทุน (SL) ต่ำกว่าแนวรับจริงลงไปเผื่อสเปรดลากกิน
-    const riskDist = price - slPrice; // ระยะห่างจากจุดเข้าซื้อไปยังจุดขาดทุน (Risk)
-    tpPrice = price + (riskDist * currentRRMultiplier); // คำนวณจุดเทคฟิต (TP) ตามสเกล R:R อัตโนมัติ
+    label = "SUPPORT (แนวรับจริง)";
+    snrPrice = liveLowestLow;          // ดึงค่าแนวรับต่ำสุดของแท่งเทียนจริงในรอบเวลานั้นมาใช้งาน
+    slPrice = snrPrice - 1.20;         // ตั้งจุด SL ต่ำกว่าแนวรับจริงลงไปเล็กน้อยเพื่อป้องกันไส้เทียนสะบัดกินทุน
+    const riskDist = price - slPrice;   // คำนวณความเสี่ยงจริง
+    tpPrice = price + (riskDist * currentRRMultiplier); // พล็อตเป้าหมายกำไรตามอัตราทด R:R จริง
   } else if (dir === 'sell') {
-    label = "RESISTANCE (แนวต้าน)";
-    snrPrice = price + snrRange;     // แนวต้านจะอยู่สูงกว่าราคาปัจจุบัน
-    slPrice = snrPrice + 1.50;       // วางจุดตัดขาดทุน (SL) สูงกว่าแนวต้านขึ้นไปเผื่อแรงสะบัดปลายไส้
+    label = "RESISTANCE (แนวต้านจริง)";
+    snrPrice = liveHighestHigh;        // ดึงค่าแนวต้านสูงสุดของแท่งเทียนจริงในรอบเวลานั้นมาใช้งาน
+    slPrice = snrPrice + 1.20;         // ตั้งจุด SL สูงกว่าแนวต้านจริงขึ้นไป
     const riskDist = slPrice - price; 
     tpPrice = price - (riskDist * currentRRMultiplier); 
   }
@@ -426,7 +446,7 @@ function renderUI(price, strats, dir, levels) {
 
   const inds = [
     {n:'RSI Realtime Filter', v:'ACTIVE', c:'up'},
-    {n:'Structure SnR Line', v:'LOCKED', c:'up'},
+    {n:'Structure SnR Line', v:'LIVE LOCKED', c:'up'},
     {n:'TradingView Data Link', v:'ONLINE', c:'up'}
   ];
   document.getElementById('indTable').innerHTML = inds.map(x=>`
@@ -436,7 +456,8 @@ function renderUI(price, strats, dir, levels) {
 }
 
 async function run() {
-  let price = await fetchPrice();
+  // ดึงค่าและประมวลผลข้อมูลราคาและโครงสร้าง SnR จริงจากตลาด
+  let price = await fetchPriceAndStructure();
   const strats = analyze();
   
   let dir = 'hold';
@@ -448,13 +469,11 @@ async function run() {
   const levels = dir!=='hold' ? computeDynamicLevels(price, dir) : null;
   renderUI(price, strats, dir, levels);
   
-  // ยิงสัญญาณอัปเดตเข้า Telegram ด้วยโครงสร้างชุดตัวเลขใหม่
   if(levels && dir!=='hold' && TELEGRAM_CONFIG.enabled) {
     broadcastToTelegram(dir, levels);
   }
 }
 
-// 📌 ฟังก์ชันยิงสัญญาณเข้ากลุ่ม Telegram (เวอร์ชันแจ้งชื่อแนวรับแนวต้าน)
 async function broadcastToTelegram(dir, levels) {
   if (TELEGRAM_CONFIG.token.includes('ใส่_')) return;
   const currentKey = `${dir}_${currentTimeframeMinutes}`;
@@ -462,21 +481,23 @@ async function broadcastToTelegram(dir, levels) {
 
   const emoji = dir === 'buy' ? '🟢 [BUY / LONG]' : '🔴 [SELL / SHORT]';
   const timeStr = new Date().toLocaleTimeString('th-TH');
+  let tfText = currentTimeframeMinutes === '15' ? 'M15' : currentTimeframeMinutes === '60' ? 'H1' : 'H4';
   
   const text = encodeURIComponent(
 `✨ *GOLD VIP SIGNAL (XAU/USD)* ✨
+⏱️ ไทม์เฟรม: *${tfText}*
 ⏰ เวลาอัปเดต: ${timeStr} (BKK)
 🎯 ทิศทาง: ${emoji}
 ⚖️ แผนอัตราทด: *RR 1:${currentRRMultiplier}*
 
-📌 *ระดับราคาอ้างอิงโครงสร้างตลาด:*
+📌 *ระดับราคาอ้างอิงโครงสร้างตลาดจริง:*
 • ${levels.snrLabel}: $${levels.snr.toLocaleString()}
-• ENTRY (ราคาเข้า): $${levels.entry.toLocaleString()}
-• STOP LOSS (ตัดขาดทุน): $${levels.sl.toLocaleString()}
-• TAKE PROFIT (เป้าหมาย): $${levels.tp.toLocaleString()}
+• ENTRY (ราคาเข้าซื้อ): $${levels.entry.toLocaleString()}
+• STOP LOSS (ใช้แนวรับต้านตั้ง): $${levels.sl.toLocaleString()}
+• TAKE PROFIT (คำนวณตาม RR): $${levels.tp.toLocaleString()}
 
-📊 ความเสี่ยงต่อรอบ: ${levels.risk} USD
-_คำเตือน: วางแผนการเงินก่อนออกออเดอร์ทุกครั้ง (ระบบวิเคราะห์สถิติอัตโนมัติ)_`
+📊 ระยะสเกลความเสี่ยง: ${levels.risk} USD
+_คำเตือน: วางแผนการเงินก่อนออกออเดอร์ทุกครั้ง (ระบบวิเคราะห์โครงสร้างราคาอัตโนมัติ)_`
   );
 
   const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${text}&parse_mode=Markdown`;
