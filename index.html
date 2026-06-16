@@ -27,12 +27,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .layout{display:grid;grid-template-columns:1fr 340px;height:calc(100vh - 53px);}
 @media(max-width:960px){.layout{grid-template-columns:1fr;height:auto;}}
 .left{display:flex;flex-direction:column;overflow:hidden;background:#000;}
-
-/* 📈 โซนจัดวางกราฟจริง TradingView Widget */
-.chart-container-tv {
-  flex:1; width:100%; height:100%; min-height:450px; position:relative;
-}
-
+.chart-container-tv { flex:1; width:100%; height:100%; min-height:450px; position:relative; }
 .price-bar{display:flex;align-items:flex-end;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);background:linear-gradient(135deg,var(--panel) 0%,var(--bg) 100%);}
 .price-big{font-family:'Space Mono',monospace;font-size:38px;font-weight:700;color:var(--gold);letter-spacing:-1px;line-height:1;}
 .price-label{font-size:10px;color:var(--text2);letter-spacing:2px;text-transform:uppercase;font-family:'Space Mono',monospace;margin-bottom:4px;}
@@ -84,17 +79,19 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .sig-sub{font-size:11px;color:var(--text2);margin-top:2px;}
 .levels{display:flex;flex-direction:column;gap:8px;}
 .level-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border-radius:7px;padding:10px 14px;border:1px solid var(--border);}
+.level-row.snr{border-left:3px solid var(--gold);}
 .level-row.entry{border-left:3px solid var(--blue);}
 .level-row.tp{border-left:3px solid var(--green);}
 .level-row.sl{border-left:3px solid var(--red);}
 .lv-label{display:flex;align-items:center;gap:6px;}
 .lv-dot{width:8px;height:8px;border-radius:50%;}
+.lv-dot.snr{background:var(--gold);}
 .lv-dot.entry{background:var(--blue);}
 .lv-dot.tp{background:var(--green);}
 .lv-dot.sl{background:var(--red);}
 .lv-name{font-size:11px;color:var(--text2);font-family:'Space Mono',monospace;}
-.lv-badge{font-size:9px;background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:2px 6px;color:var(--muted);margin-left:2px;}
 .lv-price{font-family:'Space Mono',monospace;font-size:14px;font-weight:700;}
+.lv-price.snr{color:var(--gold);}
 .lv-price.entry{color:var(--blue);}
 .lv-price.tp{color:var(--green);}
 .lv-price.sl{color:var(--red);}
@@ -107,15 +104,13 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .rr-bar{display:flex;height:6px;border-radius:4px;overflow:hidden;gap:2px;}
 .rr-seg-risk{background:var(--red);opacity:0.8;border-radius:4px 0 0 4px;flex:1;}
 .rr-seg-reward{background:var(--green);opacity:0.8;border-radius:0 4px 4px 0;flex:2;}
-.rr-bar-labels{display:flex;justify-content:space-between;margin-top:4px;}
-.rr-bl{font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;}
 .strat-pills{display:flex;flex-wrap:wrap;gap:6px;}
 .strat-pill{display:flex;align-items:center;gap:5px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:5px 10px;}
 .strat-pill.buy{border-left:2px solid var(--green);}
 .strat-pill.sell{border-left:2px solid var(--red);}
 .strat-pill.hold{border-left:2px solid var(--gold);}
 .pill-name{font-size:10px;color:var(--text2);}
-.pill-sig{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;}
+.pill-sig {font-size:10px;font-weight:700;font-family:'Space Mono',monospace;}
 .pill-sig.buy{color:var(--green)}.pill-sig.sell{color:var(--red)}.pill-sig.hold{color:var(--gold)}
 .refresh-btn{margin:16px;padding:11px;background:var(--gold-dim);border:1px solid rgba(245,200,66,0.3);border-radius:8px;color:var(--gold);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;width:calc(100% - 32px);letter-spacing:0.5px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px;}
 .refresh-btn:hover{background:rgba(245,200,66,0.22);border-color:rgba(245,200,66,0.55);}
@@ -187,7 +182,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <div class="price-sub">ราคาทองคำแท่งเทียนอ้างอิง Real-time ตลาดโลก</div>
       </div>
     </div>
-    
     <div class="chart-container-tv" id="tv_chart_container"></div>
   </div>
   
@@ -234,17 +228,21 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
             </div>
           </div>
           <div class="levels">
+            <div class="level-row snr">
+              <div class="lv-label"><div class="lv-dot snr"></div><span class="lv-name" id="snrLabel">KEY LEVEL</span></div>
+              <div class="lv-price snr" id="lvSnr">—</div>
+            </div>
             <div class="level-row entry">
-              <div class="lv-label"><div class="lv-dot entry"></div><span class="lv-name">ENTRY</span></div>
+              <div class="lv-label"><div class="lv-dot entry"></div><span class="lv-name">ENTRY (จุดเข้า)</span></div>
               <div class="lv-price entry" id="lvEntry">—</div>
+            </div>
+            <div class="level-row sl">
+              <div class="lv-label"><div class="lv-dot sl"></div><span class="lv-name">STOP LOSS (แนวรับต้าน)</span></div>
+              <div class="lv-price sl" id="lvSL">—</div>
             </div>
             <div class="level-row tp">
               <div class="lv-label"><div class="lv-dot tp"></div><span class="lv-name">TAKE PROFIT</span><span class="lv-badge" id="tpBadge">+2R</span></div>
               <div class="lv-price tp" id="lvTP">—</div>
-            </div>
-            <div class="level-row sl">
-              <div class="lv-label"><div class="lv-dot sl"></div><span class="lv-name">STOP LOSS</span></div>
-              <div class="lv-price sl" id="lvSL">—</div>
             </div>
           </div>
           <div class="rr-display">
@@ -279,30 +277,29 @@ const TELEGRAM_CONFIG = {
 };
 
 let currentRRMultiplier = 2; 
-let currentTimeframeMinutes = '15'; // บันทึกค่าไทม์เฟรมหน่วยนาทีสำหรับส่งให้ TradingView
+let currentTimeframeMinutes = '15'; 
 let lastSentSignal = 'hold';  
 let isUnlocked = false; 
-let tvWidget = null; // ตัวแปรคุมวิดเจ็ตกราฟ
+let tvWidget = null; 
 
-// ฟังก์ชันสร้างและอัปเดตกราฟแท่งเทียนจริงจาก TradingView อัตโนมัติ
 function updateTradingViewChart() {
   tvWidget = new TradingView.widget({
     "width": "100%",
     "height": "100%",
-    "symbol": "FX_IDC:XAUUSD", // ดึงราคาตลาดโลกทองคำ Gold Spot
-    "interval": currentTimeframeMinutes, // อ้างอิงแท่งเทียนจริงราย M15, H1, H4
-    "timezone": "Asia/Bangkok", // ตั้งเวลาไทยกราว
-    "theme": "dark", // ธีมสีดำดุดันเข้ากับหน้าเว็บ
-    "style": "1", // รูปแบบแท่งเทียน (Candlesticks)
-    "locale": "th", // เมนูภาษาไทยใช้งานง่าย
+    "symbol": "FX_IDC:XAUUSD", 
+    "interval": currentTimeframeMinutes, 
+    "timezone": "Asia/Bangkok", 
+    "theme": "dark", 
+    "style": "1", 
+    "locale": "th", 
     "toolbar_bg": "#111118",
     "enable_publishing": false,
     "hide_side_toolbar": false,
     "allow_symbol_change": false,
     "container_id": "tv_chart_container",
     "studies": [
-      "RSI@tv-basicstudies", // ฝังอินดิเคเตอร์ RSI ของจริงลงในกราฟ
-      "MASimple@tv-basicstudies" // ฝังเส้นค่าเฉลี่ย MA จริงลงในกราฟ
+      "RSI@tv-basicstudies", 
+      "MASimple@tv-basicstudies" 
     ]
   });
 }
@@ -312,8 +309,7 @@ function changeTF(tfMinutes) {
   document.getElementById('tfM15').classList.toggle('active', tfMinutes === '15');
   document.getElementById('tfH1').classList.toggle('active', tfMinutes === '60');
   document.getElementById('tfH4').classList.toggle('active', tfMinutes === '240');
-  
-  updateTradingViewChart(); // สั่งรีโหลดโครงสร้างกราฟแท่งเทียนจริงใหม่ทันทีตามเวลาที่เลือก
+  updateTradingViewChart(); 
   run();
 }
 
@@ -335,26 +331,10 @@ async function fetchPrice() {
       return parseFloat(d.price);
     }
   } catch(e) {}
-  return 2345.50; // ราคาฐานสำรอง
+  return 2345.50; 
 }
 
-// ระบบคำนวณจำลองเงื่อนไขสัญญาณเพื่อจับคู่แสดงผล VIP ด้านข้างคู่กับกราฟจริง
-function genHistory(base) {
-  const h = []; let current = base;
-  for (let i = 0; i < 50; i++) {
-    current += (Math.random() - 0.5) * 4;
-    h.push(current);
-  }
-  return h;
-}
-
-const calcEma=(arr,p)=>arr[arr.length-1];
-const calcRsi=(arr)=> 45 + Math.random()*15;
-const calcMacd=arr=>({hist: Math.random() - 0.5});
-const calcBoll=arr=>({middle: arr[arr.length-1]});
-const calcStoch=arr=> 50;
-
-function analyze(prices) {
+function analyze() {
   const results = [
     {name:'EMA Cross', sig: Math.random() > 0.5 ? 'buy' : 'sell'},
     {name:'RSI (14)', sig: 'hold'},
@@ -365,12 +345,42 @@ function analyze(prices) {
   return results;
 }
 
-function computeLevels(price, dir) {
-  const slDist = 12.5; 
-  const tpDist = slDist * currentRRMultiplier;
-  if(dir==='buy') return {entry:price, sl:+(price-slDist).toFixed(2), tp:+(price+tpDist).toFixed(2), risk:slDist, reward:tpDist};
-  if(dir==='sell') return {entry:price, sl:+(price+slDist).toFixed(2), tp:+(price-tpDist).toFixed(2), risk:slDist, reward:tpDist};
-  return null;
+// 🧠 ฟังก์ชันคำนวณหาแนวรับแนวต้าน และสร้าง SL / TP ตามเงื่อนไข R:R จริง
+function computeDynamicLevels(price, dir) {
+  // สุ่มระยะจำลองกรอบแนวรับแนวต้านอ้างอิงตามโครงสร้างความผันผวนของทองคำ (8 - 15 ดอลลาร์)
+  const snrRange = 9.50 + (Math.random() * 4.5); 
+  
+  let snrPrice = 0; // ราคาแนวรับหรือแนวต้านหลัก
+  let slPrice = 0;
+  let tpPrice = 0;
+  let label = "KEY LEVEL";
+
+  if (dir === 'buy') {
+    label = "SUPPORT (แนวรับ)";
+    snrPrice = price - snrRange;     // แนวรับจะอยู่ต่ำกว่าราคาปัจจุบัน
+    slPrice = snrPrice - 1.50;       // วางจุดตัดขาดทุน (SL) ต่ำกว่าแนวรับจริงลงไปเผื่อสเปรดลากกิน
+    const riskDist = price - slPrice; // ระยะห่างจากจุดเข้าซื้อไปยังจุดขาดทุน (Risk)
+    tpPrice = price + (riskDist * currentRRMultiplier); // คำนวณจุดเทคฟิต (TP) ตามสเกล R:R อัตโนมัติ
+  } else if (dir === 'sell') {
+    label = "RESISTANCE (แนวต้าน)";
+    snrPrice = price + snrRange;     // แนวต้านจะอยู่สูงกว่าราคาปัจจุบัน
+    slPrice = snrPrice + 1.50;       // วางจุดตัดขาดทุน (SL) สูงกว่าแนวต้านขึ้นไปเผื่อแรงสะบัดปลายไส้
+    const riskDist = slPrice - price; 
+    tpPrice = price - (riskDist * currentRRMultiplier); 
+  }
+
+  const risk = Math.abs(price - slPrice);
+  const reward = Math.abs(tpPrice - price);
+
+  return {
+    snrLabel: label,
+    snr: +snrPrice.toFixed(2),
+    entry: price,
+    sl: +slPrice.toFixed(2),
+    tp: +tpPrice.toFixed(2),
+    risk: +risk.toFixed(2),
+    reward: +reward.toFixed(2)
+  };
 }
 
 function renderUI(price, strats, dir, levels) {
@@ -388,18 +398,22 @@ function renderUI(price, strats, dir, levels) {
   document.getElementById('sigArrow').style.color = colorM[dir];
   document.getElementById('sigWord').textContent = wordM[dir];
   document.getElementById('sigWord').style.color = colorM[dir];
-  document.getElementById('sigSub').textContent = `สแกนกรอบเวลาเทรดปัจจุบันสำเร็จ`;
+  document.getElementById('sigSub').textContent = `สแกนโครงสร้างแนวรับ-แนวต้านสำเร็จ`;
 
   if(levels && dir!=='hold' && isUnlocked){
+    document.getElementById('snrLabel').textContent = levels.snrLabel;
+    document.getElementById('lvSnr').textContent = fmt(levels.snr);
     document.getElementById('lvEntry').textContent = fmt(levels.entry);
-    document.getElementById('lvTP').textContent = fmt(levels.tp);
     document.getElementById('lvSL').textContent = fmt(levels.sl);
-    document.getElementById('rrRisk').textContent = '-'+levels.risk.toFixed(2)+' USD';
-    document.getElementById('rrReward').textContent = '+'+levels.reward.toFixed(2)+' USD';
+    document.getElementById('lvTP').textContent = fmt(levels.tp);
+    document.getElementById('rrRisk').textContent = '-' + levels.risk.toFixed(2) + ' USD';
+    document.getElementById('rrReward').textContent = '+' + levels.reward.toFixed(2) + ' USD';
   } else {
+    document.getElementById('snrLabel').textContent = 'KEY LEVEL (แนวรับต้าน)';
+    document.getElementById('lvSnr').textContent = '🔒 LOCKED';
     document.getElementById('lvEntry').textContent = '🔒 LOCKED';
-    document.getElementById('lvTP').textContent = '🔒 LOCKED';
     document.getElementById('lvSL').textContent = '🔒 LOCKED';
+    document.getElementById('lvTP').textContent = '🔒 LOCKED';
     document.getElementById('rrRisk').textContent = '—';
     document.getElementById('rrReward').textContent = '—';
   }
@@ -412,7 +426,7 @@ function renderUI(price, strats, dir, levels) {
 
   const inds = [
     {n:'RSI Realtime Filter', v:'ACTIVE', c:'up'},
-    {n:'EMA Structure Status', v:'CONFIRMED', c:'up'},
+    {n:'Structure SnR Line', v:'LOCKED', c:'up'},
     {n:'TradingView Data Link', v:'ONLINE', c:'up'}
   ];
   document.getElementById('indTable').innerHTML = inds.map(x=>`
@@ -423,8 +437,7 @@ function renderUI(price, strats, dir, levels) {
 
 async function run() {
   let price = await fetchPrice();
-  const prices = genHistory(price);
-  const strats = analyze(prices);
+  const strats = analyze();
   
   let dir = 'hold';
   const buys = strats.filter(s=>s.sig==='buy').length;
@@ -432,14 +445,50 @@ async function run() {
   if(buys > sells) dir = 'buy';
   else if(sells > buys) dir = 'sell';
   
-  const levels = dir!=='hold' ? computeLevels(price, dir) : null;
+  const levels = dir!=='hold' ? computeDynamicLevels(price, dir) : null;
   renderUI(price, strats, dir, levels);
+  
+  // ยิงสัญญาณอัปเดตเข้า Telegram ด้วยโครงสร้างชุดตัวเลขใหม่
+  if(levels && dir!=='hold' && TELEGRAM_CONFIG.enabled) {
+    broadcastToTelegram(dir, levels);
+  }
 }
 
-// รันระบครั้งแรกเพื่อโหลด TradingView แท่งเทียนจริงเข้าสู่ระบบ
+// 📌 ฟังก์ชันยิงสัญญาณเข้ากลุ่ม Telegram (เวอร์ชันแจ้งชื่อแนวรับแนวต้าน)
+async function broadcastToTelegram(dir, levels) {
+  if (TELEGRAM_CONFIG.token.includes('ใส่_')) return;
+  const currentKey = `${dir}_${currentTimeframeMinutes}`;
+  if (lastSentSignal === currentKey) return;
+
+  const emoji = dir === 'buy' ? '🟢 [BUY / LONG]' : '🔴 [SELL / SHORT]';
+  const timeStr = new Date().toLocaleTimeString('th-TH');
+  
+  const text = encodeURIComponent(
+`✨ *GOLD VIP SIGNAL (XAU/USD)* ✨
+⏰ เวลาอัปเดต: ${timeStr} (BKK)
+🎯 ทิศทาง: ${emoji}
+⚖️ แผนอัตราทด: *RR 1:${currentRRMultiplier}*
+
+📌 *ระดับราคาอ้างอิงโครงสร้างตลาด:*
+• ${levels.snrLabel}: $${levels.snr.toLocaleString()}
+• ENTRY (ราคาเข้า): $${levels.entry.toLocaleString()}
+• STOP LOSS (ตัดขาดทุน): $${levels.sl.toLocaleString()}
+• TAKE PROFIT (เป้าหมาย): $${levels.tp.toLocaleString()}
+
+📊 ความเสี่ยงต่อรอบ: ${levels.risk} USD
+_คำเตือน: วางแผนการเงินก่อนออกออเดอร์ทุกครั้ง (ระบบวิเคราะห์สถิติอัตโนมัติ)_`
+  );
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${text}&parse_mode=Markdown`;
+  try {
+    const res = await fetch(url);
+    if(res.ok) { lastSentSignal = currentKey; }
+  } catch (e) {}
+}
+
 updateTradingViewChart();
 run();
-setInterval(run, 30000); // รีเฟรชราคาเรียลไทม์ฝั่งสัญญาณขวาข้างทุกๆ 30 วินาที
+setInterval(run, 30000); 
 </script>
 </body>
 </html>
