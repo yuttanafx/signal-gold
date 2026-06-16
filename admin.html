@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GOLD Signal · Admin Database Portal</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+:root {
+  --bg:#0a0a0f;--panel:#111118;--panel2:#16161f;--border:#1e1e2e;
+  --gold:#f5c842;--gold-dim:rgba(245,200,66,0.12);
+  --red:#ff4444;--red-dim:rgba(255,68,68,0.12);
+  --green:#00e676;--text:#e8e8f0;--text2:#9090a8;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;padding:30px;min-height:100vh;display:flex;justify-content:center;align-items:flex-start;}
+.admin-container{width:100%;max-width:650px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:24px;}
+.title{font-family:'Space Mono',monospace;font-size:18px;color:var(--gold);margin-bottom:18px;display:flex;align-items:center;justify-content:between;}
+.form-box{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:20px;display:flex;gap:10px;align-items:flex-end;}
+.form-group{flex:1;}
+.label{display:block;font-size:10px;color:var(--text2);font-family:'Space Mono',monospace;margin-bottom:6px;text-transform:uppercase;}
+.input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:14px;outline:none;}
+.input:focus{border-color:var(--gold);}
+.add-btn{background:var(--gold);color:var(--bg);border:none;padding:11px 20px;font-size:13px;font-weight:700;border-radius:6px;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.user-list{display:flex;flex-direction:column;gap:8px;}
+.user-item{display:flex;justify-content:between;align-items:center;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;}
+.user-info{font-family:'Space Mono',monospace;}
+.user-info .name{color:var(--text);font-size:14px;font-weight:600;}
+.user-info .pass{color:var(--gold);font-size:12px;margin-top:2px;}
+.del-btn{background:var(--red-dim);color:var(--red);border:1px solid rgba(255,68,68,0.2);padding:6px 12px;font-size:11px;font-weight:600;border-radius:4px;cursor:pointer;}
+.del-btn:hover{background:rgba(255,68,68,0.25);}
+</style>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, remove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // ⚠️ เปลี่ยนค่าคอนฟิกด้านล่างนี้ให้ตรงกับของแอดมินนะครับ
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // ฟังก์ชันเพิ่มรหัสผ่านลูกค้า
+  window.addUserCode = function() {
+    const name = document.getElementById('custName').value.trim();
+    const pass = document.getElementById('custPass').value.trim();
+    
+    if(!name || !pass) {
+      alert("กรุณากรอกทั้งชื่อลูกค้าและรหัสผ่านครับ");
+      return;
+    }
+    
+    // บันทึกลงฐานข้อมูล Firebase โดยใช้ตัวรหัสผ่านเป็น Key เพื่อให้ดึงเช็กง่าย
+    set(ref(db, 'vip_codes/' + pass), {
+      customer_name: name,
+      passcode: pass,
+      created_at: new Date().toISOString()
+    }).then(() => {
+      document.getElementById('custName').value = '';
+      document.getElementById('custPass').value = '';
+    });
+  }
+
+  // ฟังก์ชันลบรหัสผ่านลูกค้าเมื่อหมดอายุ
+  window.deleteUserCode = function(passKey) {
+    if(confirm("ยืนยันที่จะยกเลิกสิทธิ์รหัสผ่านนี้ใช่หรือไม่?")) {
+      remove(ref(db, 'vip_codes/' + passKey));
+    }
+  }
+
+  // ติดตามการเปลี่ยนแปลงข้อมูลแบบ Real-time มาแสดงผลบนหน้าแอดมิน
+  const vipRef = ref(db, 'vip_codes');
+  onValue(vipRef, (snapshot) => {
+    const data = snapshot.val();
+    const listElement = document.getElementById('userList');
+    listElement.innerHTML = '';
+    
+    if(!data) {
+      listElement.innerHTML = '<div style="color:var(--text2); font-size:12px; text-align:center; padding:20px;">ยังไม่มีการสร้างรหัสผ่าน VIP ในระบบ</div>';
+      return;
+    }
+    
+    Object.keys(data).forEach(key => {
+      const user = data[key];
+      listElement.innerHTML += `
+        <div class="user-item">
+          <div class="user-info">
+            <div class="name">👤 ลูกค้า: ${user.customer_name}</div>
+            <div class="pass">🔑 PASSCODE: ${user.passcode}</div>
+          </div>
+          <button class="del-btn" onclick="deleteUserCode('${key}')">✖ ยกเลิกสิทธิ์</button>
+        </div>
+      `;
+    });
+  });
+</script>
+</head>
+<body>
+
+<div class="admin-container">
+  <div class="title">⚙️ GOLD SIGNAL PANEL <span style="font-size:11px; color:var(--text2);">Firebase Realtime DB</span></div>
+  
+  <div class="form-box">
+    <div class="form-group">
+      <label class="label">ชื่อผู้ใช้งาน / หมายเหตุ</label>
+      <input type="text" class="input" id="custName" placeholder="เช่น คุณสมชาย (VIP 1 เดือน)">
+    </div>
+    <div class="form-group">
+      <label class="label">ตั้งรหัสผ่านให้ลูกค้า (Passcode)</label>
+      <input type="text" class="input" id="custPass" placeholder="เช่น GOLD777">
+    </div>
+    <button class="add-btn" onclick="addUserCode()">＋ ออกรหัส VIP</button>
+  </div>
+
+  <div class="label" style="margin-bottom:8px;">รายชื่อรหัสผ่านที่ใช้งานได้ปัจจุบัน</div>
+  <div class="user-list" id="userList">
+    </div>
+</div>
+
+</body>
+</html>
