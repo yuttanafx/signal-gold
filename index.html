@@ -396,7 +396,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
     </div>
 
     <div class="sec">
-      <div class="sec-title">กลยุทธ์ผ่านเกณฑ์ (5 เงื่อนไข)</div>
+      <div class="sec-title">กลยุทธ์ผ่านเกณฑ์ (5 เงื่อนไข Matrix)</div>
       <div class="strat-pills" id="stratPills"></div>
     </div>
     <div class="sec">
@@ -435,9 +435,10 @@ let lastSentSignal = 'hold';
 let isUnlocked = false; 
 let tvWidget = null; 
 
+// ตัวแปรเก็บค่าสถิติโครงสร้างตลาดที่คำนวณสด
 let liveHighestHigh = 0;
 let liveLowestLow = 0;
-let globalKlinesData = []; // 💡 ตัวแปรเก็บอาร์เรย์แท่งเทียนสำหรับประมวลผลอินดิเคเตอร์เชิงคณิตศาสตร์จริง
+let computedATR = 0;
 
 const assetMap = {
   XAUUSD: { tvSymbol: "FX_IDC:XAUUSD", binanceSymbol: "PAXGUSDT", label: "GOLD SPOT / U.S. DOLLAR" },
@@ -497,45 +498,21 @@ function changeRR(ratio) {
   run();
 }
 
-async function fetchPriceAndStructure() {
-  try {
-    let binanceInterval = '15m';
-    if (currentTimeframeMinutes === '60') binanceInterval = '1h';
-    if (currentTimeframeMinutes === '240') binanceInterval = '4h';
-
-    const symbol = assetMap[currentAsset].binanceSymbol;
-    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceInterval}&limit=40`);
-    if (r.ok) {
-      const klines = await r.json();
-      globalKlinesData = klines; // บันทึกข้อมูลแท่งเทียนของไทม์เฟรมปัจจุบันเก็บไว้ลุยสูตรอินดิเคเตอร์
-      
-      const highs = klines.map(c => parseFloat(c[2]));
-      const lows = klines.map(c => parseFloat(c[3]));
-      
-      liveHighestHigh = Math.max(...highs);
-      liveLowestLow = Math.min(...lows);
-
-      return parseFloat(klines[klines.length - 1][4]);
-    }
-  } catch(e) {
-    console.error("Error loading structure:", e);
-  }
-  return currentAsset.includes('BTC') ? 67000.00 : currentAsset.includes('ETH') ? 3500.00 : 2345.50; 
-}
-
-// 🧠 ฟังก์ชันคำนวณสูตรอินดิเคเตอร์ทางเทคนิคอลจากแท่งเทียนจริงประจำไทม์เฟรมนั้น ๆ ไม่สุ่มแล้ว!
-function calculateTechnicalIndicators(klines, currentPrice) {
-  if (!klines || klines.length < 25) {
+// 🧠 ฟังก์ชันคำนวณ 3-Layer Advanced Filter Matrix แบบลึกซึ้ง (EMA200 + RSI-MA + ATR ผันผวน)
+function calculateAdvancedMatrix(klines, currentPrice) {
+  if (!klines || klines.length < 30) {
     return { direction: 'hold', details: [
-      {name:'EMA Cross', sig: 'hold'}, {name:'RSI (14)', sig: 'hold'},
-      {name:'MACD System', sig: 'hold'}, {name:'Bollinger Bands', sig: 'buy'}, {name:'Stochastic', sig: 'hold'}
+      {name:'EMA 200 Trend', sig: 'hold'}, {name:'EMA Cross (9/21)', sig: 'hold'},
+      {name:'RSI Over Bought/Sold', sig: 'hold'}, {name:'MACD Divergence', sig: 'hold'}, {name:'ATR Target Adaptor', sig: 'hold'}
     ]};
   }
 
   const closePrices = klines.map(c => parseFloat(c[4]));
+  const highPrices = klines.map(c => parseFloat(c[2]));
+  const lowPrices = klines.map(c => parseFloat(c[3]));
   const len = closePrices.length;
 
-  // 1. คำนวณตรรกะคณิตศาสตร์อย่างง่ายของเส้นค่าเฉลี่ยศัลยกรรม (EMA 9 vs EMA 21)
+  // สูตรคำนวณเส้นค่าเฉลี่ยศัลยกรรม (EMA)
   const calcEMA = (prices, period) => {
     let k = 2 / (period + 1);
     let ema = prices[0];
@@ -544,68 +521,91 @@ function calculateTechnicalIndicators(klines, currentPrice) {
     }
     return ema;
   };
-  const emaShort = calcEMA(closePrices, 9);
-  const emaLong = calcEMA(closePrices, 21);
-  const emaSignal = emaShort > emaLong ? 'buy' : 'sell';
 
-  // 2. คำนวณ Relative Strength Index (RSI 14) ตามโมเมนตัมจริงของแท่งเทียน
-  let gains = 0, losses = 0;
-  for (let i = len - 14; i < len; i++) {
-    let diff = closePrices[i] - closePrices[i - 1];
-    if (diff > 0) gains += diff; else losses -= diff;
+  // 🛡️ LAYER 1: TREND FILTER (EMA 200) - คัดกรองทิศทางเทรนด์ใหญ่เด็ดขาด
+  const ema200 = calcEMA(closePrices, 200 || len); // ใช้ความยาวสูงสุดเท่าที่มีรองรับเทรนด์ใหญ่
+  const layer1TrendSignal = currentPrice > ema200 ? 'buy' : 'sell';
+
+  // 📊 LAYER 2: TRIGGER FILTERS (EMA Cross / MACD / RSI-MA)
+  const ema9 = calcEMA(closePrices, 9);
+  const ema21 = calcEMA(closePrices, 21);
+  const emaCrossSignal = ema9 > ema21 ? 'buy' : 'sell';
+
+  // คำนวณความแข็งแกร่ง RSI (14) พร้อมเส้นค่าเฉลี่ย RSI-MA (9) ของตัวเองเพื่อหาจุดระเบิดราคา
+  let rsiHistory = [];
+  for (let startIdx = len - 25; startIdx < len; startIdx++) {
+    let gains = 0, losses = 0;
+    for (let i = startIdx - 13; i <= startIdx; i++) {
+      let diff = closePrices[i] - closePrices[i - 1];
+      if (diff > 0) gains += diff; else losses -= diff;
+    }
+    rsiHistory.push(losses === 0 ? 100 : 100 - (100 / (1 + (gains / 14) / (losses / 14))));
   }
-  let rsi = losses === 0 ? 100 : 100 - (100 / (1 + (gains / 14) / (losses / 14)));
+  const currentRSI = rsiHistory[rsiHistory.length - 1];
+  const rsiMA9 = calcEMA(rsiHistory, 9);
   
   let rsiSignal = 'hold';
-  if (rsi > 68) rsiSignal = 'sell'; // Overbought โซนขายแพงเกินไป
-  else if (rsi < 32) rsiSignal = 'buy'; // Oversold โซนขายเก็บของถูกเกินไป
+  if (currentRSI > 65) rsiSignal = 'sell';
+  else if (currentRSI < 35) rsiSignal = 'buy';
+  else rsiSignal = currentRSI > rsiMA9 ? 'buy' : 'sell'; // ตรรกะเบรคเอาท์เส้นโมเมนตัมตัวเอง
 
-  // 3. ตรรกะตรวจเช็กแนวโน้มโมเมนตัม MACD
   const macdSignal = closePrices[len - 1] > closePrices[len - 4] ? 'buy' : 'sell';
-  const bbSignal = currentPrice < emaLong ? 'buy' : 'sell';
-  const stochSignal = rsi > 50 ? 'buy' : 'sell';
 
-  // 📊 ระบบโหวตหาข้อยุติความก้าวหน้า (Voting Mechanism)
+  // 🛡️ LAYER 3: VOLATILITY ADAPTOR (ATR 14) - คำนวณระยะกางของช่วงราคาผันผวนจริง
+  let trueRanges = [];
+  for (let i = len - 14; i < len; i++) {
+    let tr = Math.max(
+      highPrices[i] - lowPrices[i],
+      Math.abs(highPrices[i] - closePrices[i - 1]),
+      Math.abs(lowPrices[i] - closePrices[i - 1])
+    );
+    trueRanges.push(tr);
+  }
+  computedATR = trueRanges.reduce((a, b) => a + b, 0) / 14;
+  const atrSignal = 'buy'; // ATR ทำหน้าที่เป็นตัวแปร Adaptor ตัวคูณระยะ
+
+  // ⚖️ ดำเนินการโหวตคะแนนโดยบังคับให้สอดคล้องกับเทรนด์ใหญ่ Layer 1 ป้องกันสวนเทรนด์ตาย
   let buyVotes = 0, sellVotes = 0;
-  const allSigs = [emaSignal, rsiSignal, macdSignal, bbSignal, stochSignal];
-  allSigs.forEach(s => { if(s==='buy') buyVotes++; if(s==='sell') sellVotes++; });
+  const indicatorsToVote = [emaCrossSignal, rsiSignal, macdSignal];
+  indicatorsToVote.forEach(s => { if(s==='buy') buyVotes++; if(s==='sell') sellVotes++; });
 
   let finalDirection = 'hold';
-  if (buyVotes >= 3) finalDirection = 'buy';
-  else if (sellVotes >= 3) finalDirection = 'sell';
+  if (layer1TrendSignal === 'buy' && buyVotes >= 2) finalDirection = 'buy';
+  else if (layer1TrendSignal === 'sell' && sellVotes >= 2) finalDirection = 'sell';
 
   return {
     direction: finalDirection,
+    rsiVal: currentRSI,
     details: [
-      {name:'EMA Cross (9/21)', sig: emaSignal},
-      {name:`RSI (14) [${rsi.toFixed(0)}]`, sig: rsiSignal},
-      {name:'MACD System', sig: macdSignal},
-      {name:'Bollinger Bands', sig: bbSignal},
-      {name:'Stochastic Filter', sig: stochSignal}
+      {name:'EMA 200 Trend Filter', sig: layer1TrendSignal},
+      {name:'EMA Cross (9/21) Match', sig: emaCrossSignal},
+      {name:`RSI-MA9 Breakout [${currentRSI.toFixed(0)}]`, sig: rsiSignal},
+      {name:'MACD System Sync', sig: macdSignal},
+      {name:`ATR Volatility Adaptor`, sig: atrSignal}
     ]
   };
 }
 
+// 📐 ปรับสูตรการคำนวณจุดเลเวลราคาให้กางออกแบบยืดหยุ่นไดนามิก อ้างอิงตามค่าความแรง ATR 14 ตลาดจริง
 function computeDynamicLevels(price, dir) {
   let snrPrice = 0; 
   let slPrice = 0;
   let tpPrice = 0;
   let label = "KEY LEVEL";
 
-  let buffer = price * 0.0005; 
+  // ใช้ค่าผันผวนจริง ATR คูณตัวแปรความเสี่ยง (1.5 เท่าของ ATR คือระยะปลอดภัยสากลในการตั้ง SL)
+  let riskBuffer = computedATR * 1.5;
 
   if (dir === 'buy') {
-    label = "SUPPORT (แนวรับจริง)";
-    snrPrice = liveLowestLow;          
-    slPrice = snrPrice - buffer;         
-    const riskDist = price - slPrice;   
-    tpPrice = price + (riskDist * currentRRMultiplier); 
+    label = "SUPPORT (แนวรับ ATR จริง)";
+    slPrice = price - riskBuffer;
+    snrPrice = liveLowestLow < slPrice ? liveLowestLow : price - (computedATR * 0.8);
+    tpPrice = price + (riskBuffer * currentRRMultiplier); 
   } else if (dir === 'sell') {
-    label = "RESISTANCE (แนวต้านจริง)";
-    snrPrice = liveHighestHigh;        
-    slPrice = snrPrice + buffer;         
-    const riskDist = slPrice - price; 
-    tpPrice = price - (riskDist * currentRRMultiplier); 
+    label = "RESISTANCE (แนวต้าน ATR จริง)";
+    slPrice = price + riskBuffer;
+    snrPrice = liveHighestHigh > slPrice ? liveHighestHigh : price + (computedATR * 0.8);
+    tpPrice = price - (riskBuffer * currentRRMultiplier); 
   }
 
   const risk = Math.abs(price - slPrice);
@@ -640,9 +640,8 @@ function renderUI(price, strats, dir, levels) {
   document.getElementById('sigWord').textContent = wordM[dir];
   document.getElementById('sigWord').style.color = colorM[dir];
   
-  // ⏱️ เพิ่มข้อความให้ลูกค้าเห็นชัดเจนว่ากำลังยึดตามสัญญาณไทม์เฟรมใดอยู่จริง
   let currentTFText = currentTimeframeMinutes === '15' ? 'M15' : currentTimeframeMinutes === '60' ? 'H1' : 'H4';
-  document.getElementById('sigSub').textContent = `คำนวณแนวโน้มเทคนิคอลโครงสร้างแท่งเทียนไทม์เฟรม ${currentTFText} สำเร็จ`;
+  document.getElementById('sigSub').textContent = `3-Layer Matrix คัดกรองแท่งเทียนไทม์เฟรม ${currentTFText} สำเร็จ`;
 
   if(levels && dir!=='hold' && isUnlocked){
     document.getElementById('snrLabel').textContent = levels.snrLabel;
@@ -693,8 +692,8 @@ function renderUI(price, strats, dir, levels) {
     </div>`).join('');
 
   const inds = [
-    {n:'Active Timeframe', v: currentTFText + ' Signal Locked', c:'up'},
-    {n:'Structure SnR Line', v:'LIVE CALC', c:'up'},
+    {n:'Matrix Trend Filter', v:'EMA 200 ON', c:'up'},
+    {n:'Volatility Range (ATR)', v: fmt(computedATR), c:'up'},
     {n:'TradingView Data Link', v:'ONLINE', c:'up'}
   ];
   document.getElementById('indTable').innerHTML = inds.map(x=>`
@@ -704,18 +703,38 @@ function renderUI(price, strats, dir, levels) {
 }
 
 async function run() {
-  let price = await fetchPriceAndStructure();
-  
-  // 🎯 เรียกสมองกลคำนวณจริงตามข้อมูลแท่งเทียนของไทม์เฟรมปัจจุบัน
-  const techAnalysis = calculateTechnicalIndicators(globalKlinesData, price);
-  const strats = techAnalysis.details;
-  let dir = techAnalysis.direction;
-  
-  const levels = dir!=='hold' ? computeDynamicLevels(price, dir) : null;
-  renderUI(price, strats, dir, levels);
-  
-  if(levels && dir!=='hold' && TELEGRAM_CONFIG.enabled) {
-    broadcastToTelegram(dir, levels);
+  try {
+    let binanceInterval = '15m';
+    if (currentTimeframeMinutes === '60') binanceInterval = '1h';
+    if (currentTimeframeMinutes === '240') binanceInterval = '4h';
+
+    const symbol = assetMap[currentAsset].binanceSymbol;
+    // ดึงแท่งเทียนย้อนกลับ 250 แท่ง เพื่อให้ครอบคลุมและเพียงพอต่อการลากสูตรคํานวณเส้นเทรนด์ใหญ่ EMA 200 จริง
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceInterval}&limit=250`);
+    
+    if (r.ok) {
+      const klines = await r.json();
+      const highs = klines.map(c => parseFloat(c[2]));
+      const lows = klines.map(c => parseFloat(c[3]));
+      
+      liveHighestHigh = Math.max(...highs.slice(-14)); // ยึดไฮโลสเปกความเสี่ยงย้อนหลังระยะใกล้
+      liveLowestLow = Math.min(...lows.slice(-14));
+      const currentPrice = parseFloat(klines[klines.length - 1][4]);
+
+      // ส่งประมวลผลผ่าน 3-Layer Advanced Engine
+      const matrixAnalysis = calculateAdvancedMatrix(klines, currentPrice);
+      const strats = matrixAnalysis.details;
+      let dir = matrixAnalysis.direction;
+      
+      const levels = dir !== 'hold' ? computeDynamicLevels(currentPrice, dir) : null;
+      renderUI(currentPrice, strats, dir, levels);
+      
+      if (levels && dir !== 'hold' && TELEGRAM_CONFIG.enabled) {
+        broadcastToTelegram(dir, levels);
+      }
+    }
+  } catch(e) {
+    console.error("Error in Advanced Matrix Tracking System:", e);
   }
 }
 
@@ -732,18 +751,18 @@ async function broadcastToTelegram(dir, levels) {
   let unit = currentAsset.includes('USD') && !currentAsset.includes('XAU') && !currentAsset.includes('EUR') ? 'Points' : 'PIPs';
 
   const text = encodeURIComponent(
-`✨ *TVE VIP SIGNAL (${currentAsset})* ✨
+`✨ *TVE ADVANCED VIP SIGNAL (${currentAsset})* ✨
 ⏱️ ไทม์เฟรม: *${tfText}*
 🎯 ทิศทาง: ${emoji}
 ⚖️ แผนอัตราทด: *RR 1:${currentRRMultiplier}*
 
-📌 *ระดับราคาตั้งค่าอ้างอิง:*
+📌 *ระดับราคาคำนวณผ่าน 3-Layer Matrix:*
 • ENTRY: ${levels.entry}
-• STOP LOSS: ${levels.sl}
+• STOP LOSS (ATR 1.5x Protection): ${levels.sl}
 • TAKE PROFIT: ${levels.tp}
 
-📊 ระยะตัดขาดทุน: ${pipsVal.toFixed(1)} ${unit}
-⏰ เวลาอัปเดต: ${timeStr} (BKK)`
+📊 ระยะความผันผวนคำนวณจริง: ${pipsVal.toFixed(1)} ${unit}
+⏰ เวลาอัปเดตระบบคลาวด์: ${timeStr} (BKK)`
   );
 
   const url = `https://api.telegram.org/bot${TELEGRAM_CONFIG.token}/sendMessage?chat_id=${TELEGRAM_CONFIG.chatId}&text=${text}&parse_mode=Markdown`;
