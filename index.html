@@ -380,9 +380,13 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 
     <div class="sec">
       <div class="sec-title">สั่งงานด้วยเสียง (Voice Command)</div>
+      <div class="selector-wrap">
+        <button class="select-btn active" id="aiProviderClaude" onclick="setAIProvider('claude')">🤖 Claude</button>
+        <button class="select-btn" id="aiProviderGemini" onclick="setAIProvider('gemini')">✨ Gemini</button>
+      </div>
       <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceCommand()">🎙️ กดเพื่อพูดสั่งงาน</button>
       <div class="voice-transcript" id="voiceTranscript"></div>
-      <div class="voice-hint">ตัวอย่างคำสั่ง: "เปลี่ยนเป็นบิทคอยน์", "ไทม์เฟรมเอชวัน", "อาร์อาร์ 1 ต่อ 2", "ตรวจสอบสัญญาณ", "เพิ่มโซล", "เพิ่ม BNBUSDT"</div>
+      <div class="voice-hint">🤖 ขับเคลื่อนด้วย Claude AI พูดเป็นประโยคธรรมชาติได้เลย เช่น "ช่วยเปลี่ยนไปดูบิทคอยน์หน่อย", "อยากดูกราฟยาวๆ เปลี่ยนเป็นโฟร์ฮาว", "เพิ่มเหรียญโซลาน่าให้หน่อย"</div>
     </div>
 
     <div class="sec">
@@ -585,6 +589,13 @@ function getAssetInfo(assetKey) {
 /* ═══════════ VOICE COMMAND ═══════════ */
 let recognition = null;
 let isListening = false;
+let currentAIProvider = 'claude'; // 'claude' | 'gemini'
+
+function setAIProvider(p) {
+  currentAIProvider = p;
+  document.getElementById('aiProviderClaude').classList.toggle('active', p === 'claude');
+  document.getElementById('aiProviderGemini').classList.toggle('active', p === 'gemini');
+}
 
 const voiceAssetAliases = {
   XAUUSD: ['ทอง','โกลด์','gold','xauusd','เอ็กซ์ยูออนุสด'],
@@ -632,8 +643,8 @@ function initVoiceRecognition() {
 
   rec.onresult = (event) => {
     const transcript = event.results[0][0].transcript.trim();
-    document.getElementById('voiceTranscript').textContent = `🗣️ ได้ยิน: "${transcript}"`;
-    handleVoiceCommand(transcript.toLowerCase());
+    document.getElementById('voiceTranscript').textContent = `🗣️ ได้ยิน: "${transcript}" — กำลังส่งให้ AI ตีความ...`;
+    processVoiceWithAI(transcript);
   };
   rec.onerror = (event) => {
     document.getElementById('voiceTranscript').textContent = `✖ Error: ${event.error}`;
@@ -665,6 +676,64 @@ function stopListening() {
   document.getElementById('voiceBtn').textContent = '🎙️ กดเพื่อพูดสั่งงาน';
 }
 
+/* ═══════════ AI VOICE PARSER (Claude ผ่าน /api/parse-voice) ═══════════ */
+async function processVoiceWithAI(transcript) {
+  const transcriptEl = document.getElementById('voiceTranscript');
+  try {
+    const res = await fetch('/api/parse-voice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        transcript,
+        customAssetKeys: Object.keys(customAssets),
+        provider: currentAIProvider
+      })
+    });
+
+    if (!res.ok) throw new Error(`API route ตอบกลับผิดพลาด — อาจยังไม่ได้ตั้งค่า API key ของ ${currentAIProvider}`);
+
+    const cmd = await res.json();
+    if (cmd.error) throw new Error(cmd.error);
+
+    const providerLabel = cmd.provider === 'gemini' ? 'Gemini ✨' : 'Claude 🤖';
+    transcriptEl.textContent = `🗣️ "${transcript}" → [${providerLabel}] ตีความ: ${cmd.action}${cmd.value ? ' (' + cmd.value + ')' : ''}`;
+    executeVoiceAction(cmd);
+
+  } catch (e) {
+    console.warn('AI voice parse ล้มเหลว, fallback ไปใช้ keyword matching:', e.message);
+    transcriptEl.textContent = `🗣️ "${transcript}" — (AI (${currentAIProvider}) ใช้ไม่ได้ ⚠️ ใช้ระบบสำรอง keyword แทน)`;
+    handleVoiceCommand(transcript.toLowerCase());
+  }
+}
+
+// สั่งงานจริงตาม action ที่ AI ตีความมาให้
+function executeVoiceAction(cmd) {
+  switch (cmd.action) {
+    case 'changeAsset':
+      if (cmd.value && getAssetInfo(cmd.value)) changeAsset(cmd.value);
+      break;
+    case 'changeTF':
+      if (['15', '60', '240'].includes(cmd.value)) changeTF(cmd.value);
+      break;
+    case 'changeRR':
+      if (cmd.value === '1') changeRR(1);
+      else if (cmd.value === '2') changeRR(2);
+      break;
+    case 'refresh':
+      run();
+      break;
+    case 'addSymbol':
+      if (cmd.value) {
+        document.getElementById('customSymbolInput').value = cmd.value;
+        addCustomAsset();
+      }
+      break;
+    default:
+      document.getElementById('voiceTranscript').textContent += ' — ❔ AI ไม่พบคำสั่งที่ตรงกัน';
+  }
+}
+
+// ระบบสำรอง (rule-based keyword matching) — ทำงานเมื่อเรียก AI ไม่สำเร็จ
 function handleVoiceCommand(text) {
   // 0) คำสั่งเพิ่มสินทรัพย์เอง — ต้องเช็คก่อนคำสั่งอื่น เพราะอาจมีชื่อเหรียญที่ทับกับ alias ปกติ
   const addMatch = text.match(/(?:เพิ่ม(?:เหรียญ|สัญลักษณ์|สินทรัพย์)?|add(?:\s*(?:coin|symbol|asset))?)\s+([a-zA-Zก-๙0-9]+)/i);
