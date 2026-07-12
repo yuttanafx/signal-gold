@@ -382,7 +382,7 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
       <div class="sec-title">สั่งงานด้วยเสียง (Voice Command)</div>
       <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceCommand()">🎙️ กดเพื่อพูดสั่งงาน</button>
       <div class="voice-transcript" id="voiceTranscript"></div>
-      <div class="voice-hint">ตัวอย่างคำสั่ง: "เปลี่ยนเป็นบิทคอยน์", "ไทม์เฟรมเอชวัน", "อาร์อาร์ 1 ต่อ 2", "ตรวจสอบสัญญาณ"</div>
+      <div class="voice-hint">ตัวอย่างคำสั่ง: "เปลี่ยนเป็นบิทคอยน์", "ไทม์เฟรมเอชวัน", "อาร์อาร์ 1 ต่อ 2", "ตรวจสอบสัญญาณ", "เพิ่มโซล", "เพิ่ม BNBUSDT"</div>
     </div>
 
     <div class="sec">
@@ -593,6 +593,32 @@ const voiceAssetAliases = {
   EURUSD: ['ยูโร','euro','eur','eurusd']
 };
 
+// alias เหรียญยอดนิยมสำหรับคำสั่ง "เพิ่ม..." — แปลงคำพูดไทย/อังกฤษ ให้เป็น Binance symbol อัตโนมัติ
+const voiceAddCoinAliases = {
+  'โซล': 'SOLUSDT', 'sol': 'SOLUSDT',
+  'บีเอ็นบี': 'BNBUSDT', 'bnb': 'BNBUSDT',
+  'โดชคอยน์': 'DOGEUSDT', 'โดช': 'DOGEUSDT', 'doge': 'DOGEUSDT',
+  'เอดา': 'ADAUSDT', 'cardano': 'ADAUSDT', 'ada': 'ADAUSDT',
+  'ริปเปิล': 'XRPUSDT', 'เอ็กซ์อาร์พี': 'XRPUSDT', 'xrp': 'XRPUSDT',
+  'อวาแลนช์': 'AVAXUSDT', 'avax': 'AVAXUSDT',
+  'ลิงค์': 'LINKUSDT', 'chainlink': 'LINKUSDT', 'link': 'LINKUSDT',
+  'โพลีกอน': 'POLUSDT', 'matic': 'POLUSDT', 'polygon': 'POLUSDT',
+  'พอลคาดอท': 'DOTUSDT', 'polkadot': 'DOTUSDT', 'dot': 'DOTUSDT',
+  'ทรอน': 'TRXUSDT', 'tron': 'TRXUSDT', 'trx': 'TRXUSDT',
+  'ไลท์คอยน์': 'LTCUSDT', 'litecoin': 'LTCUSDT', 'ltc': 'LTCUSDT'
+};
+
+// แปลงคำพูดที่ตามหลังคำสั่ง "เพิ่ม/add" ให้เป็น Binance symbol ที่พร้อมใช้
+function resolveVoiceSymbol(rawWord) {
+  const clean = rawWord.trim().toLowerCase().replace(/\s+/g, '');
+  if (!clean) return null;
+  if (voiceAddCoinAliases[clean]) return voiceAddCoinAliases[clean];
+  // ถ้าพูดเป็น symbol ตรง ๆ เช่น "sol" หรือ "solusdt" ให้เติม USDT ให้ถ้ายังไม่มี
+  const upper = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (!upper) return null;
+  return upper.endsWith('USDT') || upper.endsWith('USD') ? upper : upper + 'USDT';
+}
+
 function initVoiceRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) {
@@ -640,6 +666,18 @@ function stopListening() {
 }
 
 function handleVoiceCommand(text) {
+  // 0) คำสั่งเพิ่มสินทรัพย์เอง — ต้องเช็คก่อนคำสั่งอื่น เพราะอาจมีชื่อเหรียญที่ทับกับ alias ปกติ
+  const addMatch = text.match(/(?:เพิ่ม(?:เหรียญ|สัญลักษณ์|สินทรัพย์)?|add(?:\s*(?:coin|symbol|asset))?)\s+([a-zA-Zก-๙0-9]+)/i);
+  if (addMatch) {
+    const symbol = resolveVoiceSymbol(addMatch[1]);
+    if (symbol) {
+      document.getElementById('voiceTranscript').textContent = `🗣️ สั่งเพิ่มสัญลักษณ์: "${symbol}" — กำลังตรวจสอบ...`;
+      document.getElementById('customSymbolInput').value = symbol;
+      addCustomAsset();
+      return;
+    }
+  }
+
   // 1) เปลี่ยนสินทรัพย์
   for (const [key, aliases] of Object.entries(voiceAssetAliases)) {
     if (aliases.some(a => text.includes(a))) { changeAsset(key); return; }
