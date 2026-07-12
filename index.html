@@ -46,6 +46,43 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .asset-btn span.type-badge { font-size: 8px; background: var(--bg); padding: 2px 6px; border-radius: 4px; color: var(--text2); text-transform: uppercase; }
 .asset-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 .asset-btn.active span.type-badge { background: var(--gold); color: var(--bg); }
+.asset-btn.custom-added { border-style: dashed; }
+.asset-remove-x { font-size:11px; color:var(--red); opacity:0.7; padding-left:4px; }
+.asset-remove-x:hover { opacity:1; }
+
+/* ─── Custom Symbol Add Box ─── */
+.custom-add-wrap{display:flex;gap:6px;margin-top:10px;}
+.custom-add-input{
+  flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:8px 10px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;
+  outline:none;text-transform:uppercase;
+}
+.custom-add-input:focus{border-color:var(--gold);}
+.custom-add-btn{
+  background:var(--blue-dim);border:1px solid rgba(79,195,247,0.4);color:var(--blue);
+  font-family:'Space Mono',monospace;font-size:12px;font-weight:700;border-radius:6px;
+  padding:0 14px;cursor:pointer;white-space:nowrap;
+}
+.custom-add-btn:hover{background:rgba(79,195,247,0.22);}
+.custom-add-hint{font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5;}
+.custom-add-status{font-size:11px;margin-top:6px;font-family:'Space Mono',monospace;display:none;}
+.custom-add-status.err{color:var(--red);}
+.custom-add-status.ok{color:var(--green);}
+
+/* ─── Voice Command ─── */
+.voice-btn{
+  width:100%;display:flex;align-items:center;justify-content:center;gap:8px;
+  background:var(--panel2);border:1px solid var(--border);border-radius:8px;
+  padding:12px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:13px;
+  font-weight:600;cursor:pointer;transition:all 0.2s;
+}
+.voice-btn.listening{
+  background:var(--red-dim);border-color:rgba(255,68,68,0.5);color:var(--red);
+  animation:voicePulse 1.2s ease-in-out infinite;
+}
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(255,68,68,0.3)}50%{box-shadow:0 0 0 8px rgba(255,68,68,0)}}
+.voice-transcript{font-size:11px;color:var(--text2);margin-top:8px;min-height:16px;font-family:'Space Mono',monospace;}
+.voice-hint{font-size:10px;color:var(--muted);margin-top:8px;line-height:1.6;}
 
 .selector-wrap { display: flex; gap: 6px; margin-bottom: 12px; }
 .select-btn {
@@ -64,9 +101,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
-/* ═══════════════════════════════════════
-   TVE TECH ECOSYSTEM — ANIMATED LOGO
-   ═══════════════════════════════════════ */
 .tve-anim-wrap {
   position: relative; width: 160px; height: 160px;
   margin-bottom: 10px; flex-shrink: 0;
@@ -170,7 +204,6 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   color: rgba(245, 200, 66, 0.5); text-transform: uppercase; margin-bottom: 6px;
   animation: textGlow 3s ease-in-out infinite alternate;
 }
-/* ═══════════════════════════════════════ */
 
 .lock-title{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--gold);font-family:'Space Mono',monospace;letter-spacing:1px;}
 .lock-desc{font-size:11px;color:var(--text2);margin-bottom:14px;}
@@ -297,12 +330,19 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
   <div class="sidebar">
     <div class="sec">
       <div class="sec-title">เลือกสินทรัพย์ตรวจสัญญาณ (Select Asset)</div>
-      <div class="asset-grid">
+      <div class="asset-grid" id="assetGrid">
         <button class="asset-btn active" id="asset-XAUUSD" onclick="changeAsset('XAUUSD')">💰 XAUUSD <span class="type-badge">Gold</span></button>
         <button class="asset-btn" id="asset-BTCUSD" onclick="changeAsset('BTCUSD')">₿ BTCUSD <span class="type-badge">Crypto</span></button>
         <button class="asset-btn" id="asset-ETHUSD" onclick="changeAsset('ETHUSD')">♦ ETHUSD <span class="type-badge">Crypto</span></button>
         <button class="asset-btn" id="asset-EURUSD" onclick="changeAsset('EURUSD')">🇪🇺 EURUSD <span class="type-badge">Forex</span></button>
       </div>
+
+      <div class="custom-add-wrap">
+        <input type="text" class="custom-add-input" id="customSymbolInput" placeholder="เช่น SOLUSDT, BNBUSDT" onkeydown="if(event.key==='Enter') addCustomAsset()">
+        <button class="custom-add-btn" onclick="addCustomAsset()">+ เพิ่ม</button>
+      </div>
+      <div class="custom-add-hint">พิมพ์ symbol ตามชื่อคู่เทรดของ Binance (ตัวพิมพ์ใหญ่/เล็กไม่สำคัญ) ระบบจะเช็คว่ามีจริงก่อนเพิ่ม</div>
+      <div class="custom-add-status" id="customAddStatus"></div>
     </div>
 
     <div class="sec">
@@ -320,6 +360,13 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
         <button class="rr-btn" id="rr1" onclick="changeRR(1)">RR 1:1</button>
         <button class="rr-btn active" id="rr2" onclick="changeRR(2)">RR 1:2</button>
       </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">สั่งงานด้วยเสียง (Voice Command)</div>
+      <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceCommand()">🎙️ กดเพื่อพูดสั่งงาน</button>
+      <div class="voice-transcript" id="voiceTranscript"></div>
+      <div class="voice-hint">ตัวอย่างคำสั่ง: "เปลี่ยนเป็นบิทคอยน์", "ไทม์เฟรมเอชวัน", "อาร์อาร์ 1 ต่อ 2", "ตรวจสอบสัญญาณ"</div>
     </div>
 
     <div class="sec">
@@ -435,23 +482,172 @@ let lastSentSignal = 'hold';
 let isUnlocked = false; 
 let tvWidget = null; 
 
-// ตัวแปรเก็บค่าสถิติโครงสร้างตลาดที่คำนวณสด
 let liveHighestHigh = 0;
 let liveLowestLow = 0;
 let computedATR = 0;
 
+// assetMap เดิมเป็นสินทรัพย์ตายตัว ส่วน customAssets เก็บสินทรัพย์ที่ผู้ใช้เพิ่มเองระหว่างใช้งาน (อยู่ใน memory เท่านั้น รีเฟรชหน้าแล้วหาย ถ้าต้องการให้จำถาวรบนเว็บของคุณเอง สามารถต่อกับ localStorage หรือฐานข้อมูลของคุณเพิ่มได้)
 const assetMap = {
   XAUUSD: { tvSymbol: "FX_IDC:XAUUSD", binanceSymbol: "PAXGUSDT", label: "GOLD SPOT / U.S. DOLLAR" },
   BTCUSD: { tvSymbol: "BINANCE:BTCUSDT", binanceSymbol: "BTCUSDT", label: "BITCOIN / U.S. DOLLAR" },
   ETHUSD: { tvSymbol: "BINANCE:ETHUSDT", binanceSymbol: "ETHUSDT", label: "ETHEREUM / U.S. DOLLAR" },
   EURUSD: { tvSymbol: "FX:EURUSD", binanceSymbol: "EURUSDT", label: "EURO / U.S. DOLLAR" }
 };
+const customAssets = {}; // key: assetKey ที่ผู้ใช้เพิ่มเอง
+
+/* ═══════════ CUSTOM SYMBOL: เพิ่มสินทรัพย์เองระหว่างใช้งาน ═══════════ */
+async function addCustomAsset() {
+  const input = document.getElementById('customSymbolInput');
+  const statusEl = document.getElementById('customAddStatus');
+  let raw = input.value.trim().toUpperCase();
+
+  const showStatus = (msg, ok) => {
+    statusEl.textContent = msg;
+    statusEl.className = 'custom-add-status ' + (ok ? 'ok' : 'err');
+    statusEl.style.display = 'block';
+  };
+
+  if (!raw) { showStatus('✖ กรุณาพิมพ์ symbol ก่อน', false); return; }
+  if (assetMap[raw] || customAssets[raw]) { showStatus(`✖ มี ${raw} อยู่ในรายการแล้ว`, false); return; }
+
+  showStatus('⏳ กำลังตรวจสอบกับ Binance...', true);
+
+  try {
+    // เช็คว่า symbol นี้มีอยู่จริงบน Binance โดยลองดึงราคาล่าสุด 1 แท่ง
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${raw}&interval=15m&limit=1`);
+    if (!r.ok) { showStatus(`✖ ไม่พบ symbol "${raw}" บน Binance`, false); return; }
+    const data = await r.json();
+    if (!Array.isArray(data) || data.length === 0) { showStatus(`✖ ไม่พบ symbol "${raw}" บน Binance`, false); return; }
+
+    // เพิ่มเข้า customAssets — สมมติ tvSymbol เป็น BINANCE:<symbol> ตามรูปแบบมาตรฐาน
+    customAssets[raw] = {
+      tvSymbol: `BINANCE:${raw}`,
+      binanceSymbol: raw,
+      label: `${raw} (Custom Added)`
+    };
+
+    renderAssetButton(raw, true);
+    showStatus(`✔ เพิ่ม ${raw} สำเร็จ`, true);
+    input.value = '';
+  } catch (e) {
+    showStatus('✖ เกิดข้อผิดพลาดในการเชื่อมต่อ ลองใหม่อีกครั้ง', false);
+  }
+}
+
+function renderAssetButton(assetKey, isCustom) {
+  const grid = document.getElementById('assetGrid');
+  const btn = document.createElement('button');
+  btn.className = 'asset-btn' + (isCustom ? ' custom-added' : '');
+  btn.id = `asset-${assetKey}`;
+  btn.innerHTML = `⭐ ${assetKey} <span class="type-badge">Custom</span>` +
+    (isCustom ? `<span class="asset-remove-x" onclick="event.stopPropagation(); removeCustomAsset('${assetKey}')">✕</span>` : '');
+  btn.onclick = () => changeAsset(assetKey);
+  grid.appendChild(btn);
+}
+
+function removeCustomAsset(assetKey) {
+  delete customAssets[assetKey];
+  const btn = document.getElementById(`asset-${assetKey}`);
+  if (btn) btn.remove();
+  if (currentAsset === assetKey) changeAsset('XAUUSD'); // กลับไป default ถ้าลบตัวที่กำลังดูอยู่
+}
+
+function getAssetInfo(assetKey) {
+  return assetMap[assetKey] || customAssets[assetKey];
+}
+
+/* ═══════════ VOICE COMMAND ═══════════ */
+let recognition = null;
+let isListening = false;
+
+const voiceAssetAliases = {
+  XAUUSD: ['ทอง','โกลด์','gold','xauusd','เอ็กซ์ยูออนุสด'],
+  BTCUSD: ['บิทคอยน์','บิตคอยน์','bitcoin','btc','btcusd'],
+  ETHUSD: ['อีเธอเรียม','อีเธอร์','ethereum','eth','ethusd'],
+  EURUSD: ['ยูโร','euro','eur','eurusd']
+};
+
+function initVoiceRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    document.getElementById('voiceTranscript').textContent = '⚠️ เบราว์เซอร์นี้ไม่รองรับ Voice Command (แนะนำ Chrome)';
+    return null;
+  }
+  const rec = new SR();
+  rec.lang = 'th-TH';
+  rec.continuous = false;
+  rec.interimResults = false;
+
+  rec.onresult = (event) => {
+    const transcript = event.results[0][0].transcript.trim();
+    document.getElementById('voiceTranscript').textContent = `🗣️ ได้ยิน: "${transcript}"`;
+    handleVoiceCommand(transcript.toLowerCase());
+  };
+  rec.onerror = (event) => {
+    document.getElementById('voiceTranscript').textContent = `✖ Error: ${event.error}`;
+    stopListening();
+  };
+  rec.onend = () => stopListening();
+
+  return rec;
+}
+
+function toggleVoiceCommand() {
+  if (!recognition) recognition = initVoiceRecognition();
+  if (!recognition) return;
+
+  if (isListening) {
+    recognition.stop();
+    stopListening();
+  } else {
+    recognition.start();
+    isListening = true;
+    document.getElementById('voiceBtn').classList.add('listening');
+    document.getElementById('voiceBtn').textContent = '🔴 กำลังฟัง... (พูดได้เลย)';
+  }
+}
+
+function stopListening() {
+  isListening = false;
+  document.getElementById('voiceBtn').classList.remove('listening');
+  document.getElementById('voiceBtn').textContent = '🎙️ กดเพื่อพูดสั่งงาน';
+}
+
+function handleVoiceCommand(text) {
+  // 1) เปลี่ยนสินทรัพย์
+  for (const [key, aliases] of Object.entries(voiceAssetAliases)) {
+    if (aliases.some(a => text.includes(a))) { changeAsset(key); return; }
+  }
+  // สินทรัพย์ custom ที่เพิ่มเอง — พูดชื่อ symbol ตรง ๆ เช่น "โซล" ให้เทียบกับ key
+  for (const key of Object.keys(customAssets)) {
+    if (text.includes(key.toLowerCase()) || text.includes(key.replace('USDT','').toLowerCase())) {
+      changeAsset(key); return;
+    }
+  }
+
+  // 2) เปลี่ยน timeframe
+  if (text.includes('เอ็มสิบห้า') || text.includes('m15') || text.includes('สิบห้านาที')) { changeTF('15'); return; }
+  if (text.includes('เอชวัน') || text.includes('h1') || text.includes('หนึ่งชั่วโมง')) { changeTF('60'); return; }
+  if (text.includes('เอชโฟร์') || text.includes('h4') || text.includes('สี่ชั่วโมง')) { changeTF('240'); return; }
+
+  // 3) เปลี่ยน RR
+  if (text.includes('1 ต่อ 1') || text.includes('หนึ่งต่อหนึ่ง') || text.includes('rr 1:1')) { changeRR(1); return; }
+  if (text.includes('1 ต่อ 2') || text.includes('หนึ่งต่อสอง') || text.includes('rr 1:2')) { changeRR(2); return; }
+
+  // 4) สั่งตรวจสอบสัญญาณ
+  if (text.includes('ตรวจสอบ') || text.includes('รีเฟรช') || text.includes('เช็คสัญญาณ') || text.includes('refresh')) {
+    run(); return;
+  }
+
+  document.getElementById('voiceTranscript').textContent += ' — ❔ ไม่พบคำสั่งที่ตรงกัน';
+}
 
 function updateTradingViewChart() {
+  const info = getAssetInfo(currentAsset);
   tvWidget = new TradingView.widget({
     "width": "100%",
     "height": "100%",
-    "symbol": assetMap[currentAsset].tvSymbol, 
+    "symbol": info.tvSymbol, 
     "interval": currentTimeframeMinutes, 
     "timezone": "Asia/Bangkok", 
     "theme": "dark", 
@@ -471,10 +667,10 @@ function updateTradingViewChart() {
 
 function changeAsset(assetKey) {
   currentAsset = assetKey;
-  Object.keys(assetMap).forEach(key => {
-    document.getElementById(`asset-${key}`).classList.toggle('active', key === assetKey);
+  document.querySelectorAll('.asset-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.id === `asset-${assetKey}`);
   });
-  document.getElementById('assetLabelDisplay').textContent = assetMap[currentAsset].label;
+  document.getElementById('assetLabelDisplay').textContent = getAssetInfo(assetKey).label;
   updateTradingViewChart(); 
   run(); 
 }
@@ -498,7 +694,6 @@ function changeRR(ratio) {
   run();
 }
 
-// 🧠 ฟังก์ชันคำนวณ 3-Layer Advanced Filter Matrix แบบลึกซึ้ง (EMA200 + RSI-MA + ATR ผันผวน)
 function calculateAdvancedMatrix(klines, currentPrice) {
   if (!klines || klines.length < 30) {
     return { direction: 'hold', details: [
@@ -512,7 +707,6 @@ function calculateAdvancedMatrix(klines, currentPrice) {
   const lowPrices = klines.map(c => parseFloat(c[3]));
   const len = closePrices.length;
 
-  // สูตรคำนวณเส้นค่าเฉลี่ยศัลยกรรม (EMA)
   const calcEMA = (prices, period) => {
     let k = 2 / (period + 1);
     let ema = prices[0];
@@ -522,16 +716,13 @@ function calculateAdvancedMatrix(klines, currentPrice) {
     return ema;
   };
 
-  // 🛡️ LAYER 1: TREND FILTER (EMA 200) - คัดกรองทิศทางเทรนด์ใหญ่เด็ดขาด
-  const ema200 = calcEMA(closePrices, 200 || len); // ใช้ความยาวสูงสุดเท่าที่มีรองรับเทรนด์ใหญ่
+  const ema200 = calcEMA(closePrices, 200 || len);
   const layer1TrendSignal = currentPrice > ema200 ? 'buy' : 'sell';
 
-  // 📊 LAYER 2: TRIGGER FILTERS (EMA Cross / MACD / RSI-MA)
   const ema9 = calcEMA(closePrices, 9);
   const ema21 = calcEMA(closePrices, 21);
   const emaCrossSignal = ema9 > ema21 ? 'buy' : 'sell';
 
-  // คำนวณความแข็งแกร่ง RSI (14) พร้อมเส้นค่าเฉลี่ย RSI-MA (9) ของตัวเองเพื่อหาจุดระเบิดราคา
   let rsiHistory = [];
   for (let startIdx = len - 25; startIdx < len; startIdx++) {
     let gains = 0, losses = 0;
@@ -547,11 +738,10 @@ function calculateAdvancedMatrix(klines, currentPrice) {
   let rsiSignal = 'hold';
   if (currentRSI > 65) rsiSignal = 'sell';
   else if (currentRSI < 35) rsiSignal = 'buy';
-  else rsiSignal = currentRSI > rsiMA9 ? 'buy' : 'sell'; // ตรรกะเบรคเอาท์เส้นโมเมนตัมตัวเอง
+  else rsiSignal = currentRSI > rsiMA9 ? 'buy' : 'sell';
 
   const macdSignal = closePrices[len - 1] > closePrices[len - 4] ? 'buy' : 'sell';
 
-  // 🛡️ LAYER 3: VOLATILITY ADAPTOR (ATR 14) - คำนวณระยะกางของช่วงราคาผันผวนจริง
   let trueRanges = [];
   for (let i = len - 14; i < len; i++) {
     let tr = Math.max(
@@ -562,9 +752,8 @@ function calculateAdvancedMatrix(klines, currentPrice) {
     trueRanges.push(tr);
   }
   computedATR = trueRanges.reduce((a, b) => a + b, 0) / 14;
-  const atrSignal = 'buy'; // ATR ทำหน้าที่เป็นตัวแปร Adaptor ตัวคูณระยะ
+  const atrSignal = 'buy';
 
-  // ⚖️ ดำเนินการโหวตคะแนนโดยบังคับให้สอดคล้องกับเทรนด์ใหญ่ Layer 1 ป้องกันสวนเทรนด์ตาย
   let buyVotes = 0, sellVotes = 0;
   const indicatorsToVote = [emaCrossSignal, rsiSignal, macdSignal];
   indicatorsToVote.forEach(s => { if(s==='buy') buyVotes++; if(s==='sell') sellVotes++; });
@@ -586,14 +775,12 @@ function calculateAdvancedMatrix(klines, currentPrice) {
   };
 }
 
-// 📐 ปรับสูตรการคำนวณจุดเลเวลราคาให้กางออกแบบยืดหยุ่นไดนามิก อ้างอิงตามค่าความแรง ATR 14 ตลาดจริง
 function computeDynamicLevels(price, dir) {
   let snrPrice = 0; 
   let slPrice = 0;
   let tpPrice = 0;
   let label = "KEY LEVEL";
 
-  // ใช้ค่าผันผวนจริง ATR คูณตัวแปรความเสี่ยง (1.5 เท่าของ ATR คือระยะปลอดภัยสากลในการตั้ง SL)
   let riskBuffer = computedATR * 1.5;
 
   if (dir === 'buy') {
@@ -708,8 +895,7 @@ async function run() {
     if (currentTimeframeMinutes === '60') binanceInterval = '1h';
     if (currentTimeframeMinutes === '240') binanceInterval = '4h';
 
-    const symbol = assetMap[currentAsset].binanceSymbol;
-    // ดึงแท่งเทียนย้อนกลับ 250 แท่ง เพื่อให้ครอบคลุมและเพียงพอต่อการลากสูตรคํานวณเส้นเทรนด์ใหญ่ EMA 200 จริง
+    const symbol = getAssetInfo(currentAsset).binanceSymbol;
     const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${binanceInterval}&limit=250`);
     
     if (r.ok) {
@@ -717,11 +903,10 @@ async function run() {
       const highs = klines.map(c => parseFloat(c[2]));
       const lows = klines.map(c => parseFloat(c[3]));
       
-      liveHighestHigh = Math.max(...highs.slice(-14)); // ยึดไฮโลสเปกความเสี่ยงย้อนหลังระยะใกล้
+      liveHighestHigh = Math.max(...highs.slice(-14));
       liveLowestLow = Math.min(...lows.slice(-14));
       const currentPrice = parseFloat(klines[klines.length - 1][4]);
 
-      // ส่งประมวลผลผ่าน 3-Layer Advanced Engine
       const matrixAnalysis = calculateAdvancedMatrix(klines, currentPrice);
       const strats = matrixAnalysis.details;
       let dir = matrixAnalysis.direction;
