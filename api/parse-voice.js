@@ -100,7 +100,10 @@ async function callGemini(transcript, systemPrompt) {
       contents: [{ role: 'user', parts: [{ text: transcript }] }],
       generationConfig: {
         responseMimeType: 'application/json', // บังคับให้ Gemini ตอบเป็น JSON ล้วนๆ ไม่ต้อง strip code fence เอง
-        maxOutputTokens: 150
+        maxOutputTokens: 512, // เผื่อ buffer ให้พอ แม้ thinkingBudget:0 แล้วก็ยังกันไว้เผื่อโมเดลรุ่นถัดไปเปลี่ยนพฤติกรรม
+        thinkingConfig: { thinkingBudget: 0 } // ปิดโหมด "คิดก่อนตอบ" — งานนี้แค่ classify ประโยคสั้นๆ ไม่ต้องคิดลึก
+        // สำคัญ: ถ้าไม่ตั้งค่านี้ โมเดล 2.5/3.x Flash จะเปิด thinking เป็นค่าเริ่มต้น และ token ที่ใช้คิด
+        // จะถูกหักจาก maxOutputTokens ทำให้ตอบว่างเปล่าได้แม้ maxOutputTokens จะดูเยอะพอแล้วก็ตาม
       }
     })
   });
