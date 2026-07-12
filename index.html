@@ -257,6 +257,22 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
 .pill-name{font-size:10px;color:var(--text2);}
 .pill-sig{font-size:10px;font-weight:700;font-family:'Space Mono',monospace;}
 .pill-sig.buy{color:var(--green)}.pill-sig.sell{color:var(--red)}.pill-sig.hold{color:var(--gold)}
+.mtf-wrap{display:flex;flex-direction:column;gap:8px;}
+.mtf-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);border:1px solid var(--border);border-radius:7px;padding:10px 14px;transition:all 0.3s;}
+.mtf-row.buy{border-left:3px solid var(--green);background:linear-gradient(90deg,rgba(0,230,118,0.08),transparent);}
+.mtf-row.sell{border-left:3px solid var(--red);background:linear-gradient(90deg,rgba(255,68,68,0.08),transparent);}
+.mtf-row.hold{border-left:3px solid var(--muted);}
+.mtf-tf{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;color:var(--text2);width:44px;}
+.mtf-sig{font-family:'Space Mono',monospace;font-size:12px;font-weight:700;flex:1;text-align:center;}
+.mtf-sig.buy{color:var(--green);}
+.mtf-sig.sell{color:var(--red);}
+.mtf-sig.hold{color:var(--muted);}
+.mtf-price{font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);width:80px;text-align:right;}
+.mtf-confluence{margin-top:10px;padding:12px;border-radius:8px;text-align:center;font-family:'Space Mono',monospace;font-size:12px;font-weight:700;letter-spacing:0.5px;border:1px solid var(--border);background:var(--panel2);color:var(--muted);transition:all 0.3s;}
+.mtf-confluence.buy{background:var(--green-dim);border-color:rgba(0,230,118,0.4);color:var(--green);}
+.mtf-confluence.sell{background:var(--red-dim);border-color:rgba(255,68,68,0.4);color:var(--red);}
+.mtf-confluence.buy,.mtf-confluence.sell{animation:voicePulse 1.5s ease-in-out infinite;}
+
 .refresh-btn{margin:16px;padding:11px;background:var(--gold-dim);border:1px solid rgba(245,200,66,0.3);border-radius:8px;color:var(--gold);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;width:calc(100% - 32px);letter-spacing:0.5px;transition:all 0.2s;display:flex;align-items:center;justify-content:center;gap:7px;}
 .refresh-btn:hover{background:rgba(245,200,66,0.22);border-color:rgba(245,200,66,0.55);}
 .ind-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);}
@@ -440,6 +456,16 @@ body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-ser
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-title">สแกนหลายไทม์เฟรม (Multi-Timeframe Scan)</div>
+      <div class="mtf-wrap" id="mtfWrap">
+        <div class="mtf-row hold" id="mtf-15"><span class="mtf-tf">M15</span><span class="mtf-sig hold" id="mtf-15-sig">—</span><span class="mtf-price" id="mtf-15-price">—</span></div>
+        <div class="mtf-row hold" id="mtf-60"><span class="mtf-tf">H1</span><span class="mtf-sig hold" id="mtf-60-sig">—</span><span class="mtf-price" id="mtf-60-price">—</span></div>
+        <div class="mtf-row hold" id="mtf-240"><span class="mtf-tf">H4</span><span class="mtf-sig hold" id="mtf-240-sig">—</span><span class="mtf-price" id="mtf-240-price">—</span></div>
+      </div>
+      <div class="mtf-confluence" id="mtfConfluence">รอผลสแกน...</div>
     </div>
 
     <div class="sec">
@@ -920,6 +946,84 @@ async function run() {
     }
   } catch(e) {
     console.error("Error in Advanced Matrix Tracking System:", e);
+  }
+
+  // สแกน multi-timeframe คู่กันไปด้วยทุกครั้งที่ run()
+  runMultiTimeframeScan();
+}
+
+/* ═══════════ MULTI-TIMEFRAME SCAN (3 ระดับ: M15 / H1 / H4) ═══════════ */
+const MTF_LIST = [
+  { tf: '15', interval: '15m' },
+  { tf: '60', interval: '1h' },
+  { tf: '240', interval: '4h' }
+];
+
+async function fetchSignalForTimeframe(symbol, interval) {
+  try {
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=250`);
+    if (!r.ok) return null;
+    const klines = await r.json();
+    const currentPrice = parseFloat(klines[klines.length - 1][4]);
+    // ใช้ engine เดียวกับ signal หลัก (calculateAdvancedMatrix) แต่ไม่แตะตัวแปร global ของ TF หลัก
+    const savedATR = computedATR;
+    const analysis = calculateAdvancedMatrix(klines, currentPrice);
+    computedATR = savedATR; // กันไม่ให้ scan รอง ไปเขียนทับ ATR ของ TF หลักที่ใช้แสดงผล SL/TP
+    return { direction: analysis.direction, price: currentPrice };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function runMultiTimeframeScan() {
+  const symbol = getAssetInfo(currentAsset).binanceSymbol;
+  const decimalPlaces = currentAsset === 'EURUSD' ? 4 : 2;
+  const fmt = v => v.toLocaleString('en-US', { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces });
+
+  // ยิงพร้อมกันทั้ง 3 ไทม์เฟรมเพื่อความเร็ว
+  const results = await Promise.all(MTF_LIST.map(m => fetchSignalForTimeframe(symbol, m.interval)));
+
+  let directions = [];
+  MTF_LIST.forEach((m, idx) => {
+    const res = results[idx];
+    const row = document.getElementById(`mtf-${m.tf}`);
+    const sigEl = document.getElementById(`mtf-${m.tf}-sig`);
+    const priceEl = document.getElementById(`mtf-${m.tf}-price`);
+    if (!res) {
+      row.className = 'mtf-row hold';
+      sigEl.className = 'mtf-sig hold';
+      sigEl.textContent = 'N/A';
+      priceEl.textContent = '—';
+      directions.push('hold');
+      return;
+    }
+    row.className = `mtf-row ${res.direction}`;
+    sigEl.className = `mtf-sig ${res.direction}`;
+    sigEl.textContent = res.direction === 'buy' ? 'BUY ▲' : res.direction === 'sell' ? 'SELL ▼' : 'WAIT ◆';
+    priceEl.textContent = fmt(res.price);
+    directions.push(res.direction);
+  });
+
+  // สรุปผล Confluence: ต้องสอดคล้องกันครบทั้ง 3 ไทม์เฟรมถึงจะถือเป็นสัญญาณความมั่นใจสูง
+  const confEl = document.getElementById('mtfConfluence');
+  const buyCount = directions.filter(d => d === 'buy').length;
+  const sellCount = directions.filter(d => d === 'sell').length;
+
+  if (buyCount === 3) {
+    confEl.className = 'mtf-confluence buy';
+    confEl.textContent = '✔ CONFLUENCE: ทั้ง 3 ไทม์เฟรม BUY สอดคล้องกัน (High Confidence)';
+  } else if (sellCount === 3) {
+    confEl.className = 'mtf-confluence sell';
+    confEl.textContent = '✔ CONFLUENCE: ทั้ง 3 ไทม์เฟรม SELL สอดคล้องกัน (High Confidence)';
+  } else if (buyCount >= 2) {
+    confEl.className = 'mtf-confluence';
+    confEl.textContent = `⚠ Partial: ${buyCount}/3 ไทม์เฟรมเอียง BUY — ยังไม่ครบสอดคล้อง`;
+  } else if (sellCount >= 2) {
+    confEl.className = 'mtf-confluence';
+    confEl.textContent = `⚠ Partial: ${sellCount}/3 ไทม์เฟรมเอียง SELL — ยังไม่ครบสอดคล้อง`;
+  } else {
+    confEl.className = 'mtf-confluence';
+    confEl.textContent = '◆ ไทม์เฟรมยังไม่สอดคล้องกัน — แนะนำรอ (WAIT)';
   }
 }
 
