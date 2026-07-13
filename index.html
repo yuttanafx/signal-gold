@@ -68,6 +68,16 @@ body{background:
 .asset-btn.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
 .asset-btn.active span.type-badge { background: var(--gold); color: var(--bg); }
 .asset-btn.custom-added { border-style: dashed; }
+.asset-btn-left{display:flex;align-items:center;gap:5px;overflow:hidden;}
+.asset-btn-right{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.asset-watch-check{
+  font-size:12px;color:var(--muted);cursor:pointer;user-select:none;flex-shrink:0;
+  width:15px;text-align:center;transition:color 0.15s;
+}
+.asset-watch-check:hover{color:var(--text2);}
+.asset-btn.watched{box-shadow:inset 0 0 0 1px rgba(227,165,66,0.45);}
+.asset-btn.watched .asset-watch-check{color:var(--gold);}
+.watchlist-scan-empty{font-size:10.5px;color:var(--text2);line-height:1.6;padding:8px 2px;text-align:center;}
 .asset-remove-x { font-size:11px; color:var(--red); opacity:0.7; padding-left:4px; }
 .asset-remove-x:hover { opacity:1; }
 
@@ -425,11 +435,12 @@ body{background:
         <div class="panel-block">
           <div class="sec-title">เลือกสินทรัพย์ตรวจสัญญาณ (Select Asset)</div>
           <div class="asset-grid" id="assetGrid">
-            <button class="asset-btn active" id="asset-XAUUSD" onclick="changeAsset('XAUUSD')">💰 XAUUSD <span class="type-badge">Gold</span></button>
-            <button class="asset-btn" id="asset-BTCUSD" onclick="changeAsset('BTCUSD')">₿ BTCUSD <span class="type-badge">Crypto</span></button>
-            <button class="asset-btn" id="asset-ETHUSD" onclick="changeAsset('ETHUSD')">♦ ETHUSD <span class="type-badge">Crypto</span></button>
-            <button class="asset-btn" id="asset-EURUSD" onclick="changeAsset('EURUSD')">🇪🇺 EURUSD <span class="type-badge">Forex</span></button>
+            <button class="asset-btn active" id="asset-XAUUSD" onclick="changeAsset('XAUUSD')"><span class="asset-btn-left"><span class="asset-watch-check" id="watch-XAUUSD" onclick="event.stopPropagation(); toggleWatchlist('XAUUSD')">☐</span>💰 XAUUSD</span><span class="type-badge">Gold</span></button>
+            <button class="asset-btn" id="asset-BTCUSD" onclick="changeAsset('BTCUSD')"><span class="asset-btn-left"><span class="asset-watch-check" id="watch-BTCUSD" onclick="event.stopPropagation(); toggleWatchlist('BTCUSD')">☐</span>₿ BTCUSD</span><span class="type-badge">Crypto</span></button>
+            <button class="asset-btn" id="asset-ETHUSD" onclick="changeAsset('ETHUSD')"><span class="asset-btn-left"><span class="asset-watch-check" id="watch-ETHUSD" onclick="event.stopPropagation(); toggleWatchlist('ETHUSD')">☐</span>♦ ETHUSD</span><span class="type-badge">Crypto</span></button>
+            <button class="asset-btn" id="asset-EURUSD" onclick="changeAsset('EURUSD')"><span class="asset-btn-left"><span class="asset-watch-check" id="watch-EURUSD" onclick="event.stopPropagation(); toggleWatchlist('EURUSD')">☐</span>🇪🇺 EURUSD</span><span class="type-badge">Forex</span></button>
           </div>
+          <div class="custom-add-hint" style="margin-top:8px;">✓ กดไอคอน ☐ ที่มุมซ้ายของแต่ละสัญลักษณ์ เพื่อเลือกหลายตัวมาสแกนพร้อมกัน (ไม่ต้องเปลี่ยนกราฟหลัก)</div>
 
           <div class="custom-add-wrap">
             <input type="text" class="custom-add-input" id="customSymbolInput" placeholder="เช่น SOLUSDT, BNBUSDT" onkeydown="if(event.key==='Enter') addCustomAsset()">
@@ -444,6 +455,13 @@ body{background:
               <span class="mini-scan-price" id="miniScanPrice">—</span>
             </div>
             <div class="mini-scan-time" id="miniScanTime">รอผลสแกน...</div>
+          </div>
+        </div>
+
+        <div class="panel-block">
+          <div class="sec-title">สแกนหลายสัญลักษณ์พร้อมกัน (Watchlist Scan)</div>
+          <div class="mtf-wrap" id="watchlistScanWrap">
+            <div class="watchlist-scan-empty" id="watchlistScanEmpty">ยังไม่ได้เลือกสัญลักษณ์ — กดไอคอน ☐ ที่การ์ดด้านบนเพื่อเพิ่มเข้าสแกนพร้อมกัน</div>
           </div>
         </div>
 
@@ -748,21 +766,97 @@ function renderAssetButton(assetKey, isCustom) {
   const btn = document.createElement('button');
   btn.className = 'asset-btn' + (isCustom ? ' custom-added' : '');
   btn.id = `asset-${assetKey}`;
-  btn.innerHTML = `⭐ ${assetKey} <span class="type-badge">Custom</span>` +
-    (isCustom ? `<span class="asset-remove-x" onclick="event.stopPropagation(); removeCustomAsset('${assetKey}')">✕</span>` : '');
+  btn.innerHTML = `<span class="asset-btn-left"><span class="asset-watch-check" id="watch-${assetKey}" onclick="event.stopPropagation(); toggleWatchlist('${assetKey}')">☐</span>⭐ ${assetKey}</span>` +
+    `<span class="asset-btn-right"><span class="type-badge">Custom</span>` +
+    (isCustom ? `<span class="asset-remove-x" onclick="event.stopPropagation(); removeCustomAsset('${assetKey}')">✕</span>` : '') +
+    `</span>`;
   btn.onclick = () => changeAsset(assetKey);
   grid.appendChild(btn);
 }
 
 function removeCustomAsset(assetKey) {
   delete customAssets[assetKey];
+  watchlist.delete(assetKey);
   const btn = document.getElementById(`asset-${assetKey}`);
   if (btn) btn.remove();
   if (currentAsset === assetKey) changeAsset('XAUUSD'); // กลับไป default ถ้าลบตัวที่กำลังดูอยู่
+  else runWatchlistScan();
 }
 
 function getAssetInfo(assetKey) {
   return assetMap[assetKey] || customAssets[assetKey];
+}
+
+/* ═══════════ WATCHLIST: เลือกหลายสัญลักษณ์มาสแกนพร้อมกัน ═══════════ */
+const watchlist = new Set(); // เก็บ assetKey ที่ผู้ใช้ติ๊กเลือกไว้ (ไม่ผูกกับสัญลักษณ์ที่แสดงบนกราฟหลัก)
+
+function toggleWatchlist(assetKey) {
+  const checkEl = document.getElementById(`watch-${assetKey}`);
+  const btnEl = document.getElementById(`asset-${assetKey}`);
+  if (watchlist.has(assetKey)) {
+    watchlist.delete(assetKey);
+    if (checkEl) checkEl.textContent = '☐';
+    if (btnEl) btnEl.classList.remove('watched');
+  } else {
+    watchlist.add(assetKey);
+    if (checkEl) checkEl.textContent = '☑';
+    if (btnEl) btnEl.classList.add('watched');
+  }
+  runWatchlistScan();
+}
+
+function tfToBinanceInterval(tfMinutes) {
+  if (tfMinutes === '60') return '1h';
+  if (tfMinutes === '240') return '4h';
+  return '15m';
+}
+
+async function fetchSignalForSymbol(assetKey) {
+  try {
+    const info = getAssetInfo(assetKey);
+    if (!info) return null;
+    const interval = tfToBinanceInterval(currentTimeframeMinutes);
+    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${info.binanceSymbol}&interval=${interval}&limit=250`);
+    if (!r.ok) return null;
+    const klines = await r.json();
+    const price = parseFloat(klines[klines.length - 1][4]);
+    // ใช้ engine เดียวกับ signal หลัก แต่กันไม่ให้เขียนทับ ATR ของสัญลักษณ์หลักที่กำลังแสดงผล SL/TP อยู่
+    const savedATR = computedATR;
+    const analysis = calculateAdvancedMatrix(klines, price);
+    computedATR = savedATR;
+    return { direction: analysis.direction, price };
+  } catch (e) {
+    return null;
+  }
+}
+
+async function runWatchlistScan() {
+  const wrap = document.getElementById('watchlistScanWrap');
+  const keys = Array.from(watchlist);
+
+  if (keys.length === 0) {
+    wrap.innerHTML = '<div class="watchlist-scan-empty" id="watchlistScanEmpty">ยังไม่ได้เลือกสัญลักษณ์ — กดไอคอน ☐ ที่การ์ดด้านบนเพื่อเพิ่มเข้าสแกนพร้อมกัน</div>';
+    return;
+  }
+
+  // แสดง placeholder ระหว่างรอผล ถ้ายังไม่เคยมีแถวของ key นั้นอยู่ก่อน
+  const results = await Promise.all(keys.map(k => fetchSignalForSymbol(k)));
+  let currentTFText = currentTimeframeMinutes === '15' ? 'M15' : currentTimeframeMinutes === '60' ? 'H1' : 'H4';
+
+  wrap.innerHTML = keys.map((key, idx) => {
+    const res = results[idx];
+    const decimalPlaces = key === 'EURUSD' ? 4 : 2;
+    const fmt = v => v.toLocaleString('en-US', { minimumFractionDigits: decimalPlaces, maximumFractionDigits: decimalPlaces });
+    if (!res) {
+      return `<div class="mtf-row hold"><span class="mtf-tf" style="width:auto;flex:1;text-align:left;">${key}</span><span class="mtf-sig hold">N/A</span><span class="mtf-price">—</span></div>`;
+    }
+    const sigText = res.direction === 'buy' ? 'BUY ▲' : res.direction === 'sell' ? 'SELL ▼' : 'WAIT ◆';
+    return `<div class="mtf-row ${res.direction}">
+      <span class="mtf-tf" style="width:auto;flex:1;text-align:left;" title="ไทม์เฟรม ${currentTFText}">${key}</span>
+      <span class="mtf-sig ${res.direction}">${sigText}</span>
+      <span class="mtf-price">${fmt(res.price)}</span>
+    </div>`;
+  }).join('');
 }
 
 /* ═══════════ VOICE COMMAND ═══════════ */
@@ -1264,6 +1358,8 @@ async function run() {
 
   // สแกน multi-timeframe คู่กันไปด้วยทุกครั้งที่ run()
   runMultiTimeframeScan();
+  // สแกนรายการสัญลักษณ์ที่เลือกไว้ใน watchlist พร้อมกันไปด้วย
+  runWatchlistScan();
 }
 
 /* ═══════════ MULTI-TIMEFRAME SCAN (3 ระดับ: M15 / H1 / H4) ═══════════ */
