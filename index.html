@@ -45,14 +45,17 @@ body{background:
 .sec-title{font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;font-family:var(--mono);margin-bottom:14px;}
 
 /* ─── Split view: settings panel | signal result panel ─── */
-.sidebar-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px;border-bottom:1px solid var(--border);}
+.sidebar-split{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:18px;border-bottom:1px solid var(--border);align-items:stretch;}
 @media(max-width:560px){.sidebar-split{grid-template-columns:1fr;}}
-.panel{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:14px;min-width:0;justify-content:space-between;}
+.panel{background:var(--panel2);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:14px;min-width:0;}
 .panel .sec-title{margin-bottom:8px;}
 .panel .asset-grid{gap:5px;}
 .panel .asset-btn{padding:8px;font-size:10.5px;}
 .panel .custom-add-wrap{margin-top:8px;}
 .panel .selector-wrap{margin-bottom:0;}
+.panel-block{display:flex;flex-direction:column;}
+.panel-spacer{flex:1;}
+.panel-scan-btn{margin-top:auto;}
 
 .asset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 .asset-btn {
@@ -71,21 +74,31 @@ body{background:
 /* ─── Custom Symbol Add Box ─── */
 .custom-add-wrap{display:flex;gap:6px;margin-top:10px;}
 .custom-add-input{
-  flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;
-  padding:8px 10px;color:var(--text);font-family:var(--mono);font-size:12px;
+  flex:1;min-width:0;width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;
+  padding:8px 8px;color:var(--text);font-family:var(--mono);font-size:11.5px;
   outline:none;text-transform:uppercase;
 }
 .custom-add-input:focus{border-color:var(--gold);}
 .custom-add-btn{
-  background:var(--blue-dim);border:1px solid rgba(79,195,247,0.4);color:var(--blue);
-  font-family:var(--mono);font-size:12px;font-weight:700;border-radius:6px;
-  padding:0 14px;cursor:pointer;white-space:nowrap;
+  flex:0 0 auto;background:var(--blue-dim);border:1px solid rgba(79,195,247,0.4);color:var(--blue);
+  font-family:var(--mono);font-size:11.5px;font-weight:700;border-radius:6px;
+  padding:0 10px;cursor:pointer;white-space:nowrap;
 }
 .custom-add-btn:hover{background:rgba(79,195,247,0.22);}
 .custom-add-hint{font-size:10px;color:var(--text2);margin-top:6px;line-height:1.5;}
 .custom-add-status{font-size:11px;margin-top:6px;font-family:var(--mono);display:none;}
 .custom-add-status.err{color:var(--red);}
 .custom-add-status.ok{color:var(--green);}
+
+/* ─── Mini live scan result (under custom-add box) ─── */
+.mini-scan-result{
+  margin-top:10px;background:var(--bg);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;display:flex;flex-direction:column;gap:4px;
+}
+.mini-scan-row{display:flex;align-items:center;justify-content:space-between;}
+.mini-scan-label{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--text2);letter-spacing:0.5px;}
+.mini-scan-price{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--gold);}
+.mini-scan-time{font-family:var(--mono);font-size:9.5px;color:var(--muted);}
 
 /* ─── Voice Command ─── */
 .voice-btn{
@@ -225,10 +238,10 @@ body{background:
 
 .lock-title{font-size:13px;font-weight:700;margin-bottom:4px;color:var(--gold);font-family:var(--mono);letter-spacing:1px;}
 .lock-desc{font-size:11px;color:var(--text2);margin-bottom:14px;}
-.lock-input-group{display:flex;gap:6px;width:100%;max-width:240px;}
-.lock-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 12px;color:var(--text);font-family:var(--mono);font-size:13px;outline:none;text-align:center;}
+.lock-input-group{display:flex;gap:6px;width:100%;max-width:100%;}
+.lock-input{flex:1;min-width:0;width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;text-align:center;}
 .lock-input:focus{border-color:var(--gold);}
-.lock-submit-btn{background:var(--gold);color:var(--bg);border:none;padding:8px 14px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;}
+.lock-submit-btn{flex:0 0 auto;background:var(--gold);color:var(--bg);border:none;padding:8px 12px;font-size:12px;font-weight:700;border-radius:6px;cursor:pointer;white-space:nowrap;}
 .lock-error{color:var(--red);font-size:11px;margin-top:8px;font-family:var(--mono);display:none;}
 .welcome-user{font-size:11px;color:var(--green);font-family:var(--mono);margin-bottom:10px;text-align:center;display:none;}
 
@@ -409,7 +422,7 @@ body{background:
 
       <!-- Panel 1: Asset / Timeframe / RR settings -->
       <div class="panel">
-        <div>
+        <div class="panel-block">
           <div class="sec-title">เลือกสินทรัพย์ตรวจสัญญาณ (Select Asset)</div>
           <div class="asset-grid" id="assetGrid">
             <button class="asset-btn active" id="asset-XAUUSD" onclick="changeAsset('XAUUSD')">💰 XAUUSD <span class="type-badge">Gold</span></button>
@@ -424,9 +437,17 @@ body{background:
           </div>
           <div class="custom-add-hint">พิมพ์ symbol ตามชื่อคู่เทรดของ Binance ระบบจะเช็คว่ามีจริงก่อนเพิ่ม</div>
           <div class="custom-add-status" id="customAddStatus"></div>
+
+          <div class="mini-scan-result" id="miniScanResult">
+            <div class="mini-scan-row">
+              <span class="mini-scan-label" id="miniScanSymbol">XAUUSD</span>
+              <span class="mini-scan-price" id="miniScanPrice">—</span>
+            </div>
+            <div class="mini-scan-time" id="miniScanTime">รอผลสแกน...</div>
+          </div>
         </div>
 
-        <div>
+        <div class="panel-block">
           <div class="sec-title">เลือกไทม์เฟรมสัญญาณ (Timeframe)</div>
           <div class="selector-wrap" style="margin-bottom:0;">
             <button class="select-btn active" id="tfM15" onclick="changeTF('15')">M15</button>
@@ -435,7 +456,19 @@ body{background:
           </div>
         </div>
 
-        <div>
+        <div class="panel-block">
+          <div class="sec-title">สแกนหลายไทม์เฟรม (Multi-Timeframe Scan)</div>
+          <div class="mtf-wrap" id="mtfWrap">
+            <div class="mtf-row hold" id="mtf-15"><span class="mtf-tf">M15</span><span class="mtf-sig hold" id="mtf-15-sig">—</span><span class="mtf-price" id="mtf-15-price">—</span></div>
+            <div class="mtf-row hold" id="mtf-60"><span class="mtf-tf">H1</span><span class="mtf-sig hold" id="mtf-60-sig">—</span><span class="mtf-price" id="mtf-60-price">—</span></div>
+            <div class="mtf-row hold" id="mtf-240"><span class="mtf-tf">H4</span><span class="mtf-sig hold" id="mtf-240-sig">—</span><span class="mtf-price" id="mtf-240-price">—</span></div>
+          </div>
+          <div class="mtf-confluence" id="mtfConfluence">รอผลสแกน...</div>
+        </div>
+
+        <div class="panel-spacer"></div>
+
+        <div class="panel-block">
           <div class="sec-title">ตั้งค่าอัตราส่วน RISK : REWARD</div>
           <div class="selector-wrap" style="margin-bottom:0;">
             <button class="rr-btn" id="rr1" onclick="changeRR(1)">RR 1:1</button>
@@ -443,7 +476,7 @@ body{background:
           </div>
         </div>
 
-        <button class="refresh-btn" style="margin:0;width:100%;" onclick="run()">↻ ตรวจสอบสัญญาณเดี๋ยวนี้</button>
+        <button class="refresh-btn panel-scan-btn" style="margin:0;width:100%;" onclick="run()">🤖 ให้ AI สแกน &amp; วิเคราะห์ราคาทันที</button>
       </div>
 
       <!-- Panel 2: Signal result -->
@@ -541,17 +574,7 @@ body{background:
       </div>
       <button class="voice-btn" id="voiceBtn" onclick="toggleVoiceCommand()">🎙️ กดเพื่อพูดสั่งงาน</button>
       <div class="voice-transcript" id="voiceTranscript"></div>
-      <div class="voice-hint">🤖 ขับเคลื่อนด้วย Claude AI พูดเป็นประโยคธรรมชาติได้เลย เช่น "ช่วยเปลี่ยนไปดูบิทคอยน์หน่อย", "อยากดูกราฟยาวๆ เปลี่ยนเป็นโฟร์ฮาว", "เพิ่มเหรียญโซลาน่าให้หน่อย"</div>
-    </div>
-
-    <div class="sec">
-      <div class="sec-title">สแกนหลายไทม์เฟรม (Multi-Timeframe Scan)</div>
-      <div class="mtf-wrap" id="mtfWrap">
-        <div class="mtf-row hold" id="mtf-15"><span class="mtf-tf">M15</span><span class="mtf-sig hold" id="mtf-15-sig">—</span><span class="mtf-price" id="mtf-15-price">—</span></div>
-        <div class="mtf-row hold" id="mtf-60"><span class="mtf-tf">H1</span><span class="mtf-sig hold" id="mtf-60-sig">—</span><span class="mtf-price" id="mtf-60-price">—</span></div>
-        <div class="mtf-row hold" id="mtf-240"><span class="mtf-tf">H4</span><span class="mtf-sig hold" id="mtf-240-sig">—</span><span class="mtf-price" id="mtf-240-price">—</span></div>
-      </div>
-      <div class="mtf-confluence" id="mtfConfluence">รอผลสแกน...</div>
+      <div class="voice-hint">🤖 ขับเคลื่อนด้วย Claude AI พูดเป็นประโยคธรรมชาติได้เลย เช่น "ช่วยเปลี่ยนไปดูบิทคอยน์หน่อย", "อยากดูกราฟยาวๆ เปลี่ยนเป็นโฟร์ฮาว", "เพิ่มเหรียญโซลาน่าให้หน่อย", "วิเคราะห์กราฟให้หน่อย" — พูดคำว่า "วิเคราะห์" ปุ๊บ AI จะดึงราคาจริงมาสแกนใหม่แล้วพูดผลสรุปกลับให้ทันที</div>
     </div>
 
   </div>
@@ -611,6 +634,37 @@ function speakStatus(text) {
   utter.lang = 'th-TH';
   if (thaiVoice) utter.voice = thaiVoice;
   window.speechSynthesis.speak(utter);
+}
+
+// ─── สั่งให้ AI "วิเคราะห์กราฟ" ด้วยเสียง แล้วพูดผลสรุปกลับมาทันที ───
+async function voiceAnalyzeAndSpeak() {
+  document.getElementById('voiceTranscript').textContent = '🤖 AI กำลังวิเคราะห์กราฟล่าสุด...';
+  await run(); // ดึงราคาจริงจาก Binance + รัน 3-Layer Matrix + Multi-Timeframe Scan ใหม่ทั้งหมด
+  speakAnalysisResult();
+}
+
+function speakAnalysisResult() {
+  const dirWord = document.getElementById('sigWord').textContent;
+  const priceText = document.getElementById('priceDisplay').textContent;
+  const tfSpeech = currentTimeframeMinutes === '15' ? 'เอ็มสิบห้า' : currentTimeframeMinutes === '60' ? 'เอชวัน' : 'เอชโฟร์';
+
+  let dirSpeech = 'รอจังหวะ (WAIT)';
+  if (dirWord.includes('BUY')) dirSpeech = 'ซื้อ (BUY)';
+  else if (dirWord.includes('SELL')) dirSpeech = 'ขาย (SELL)';
+
+  let msg = `วิเคราะห์กราฟ ${currentAsset} ไทม์เฟรม ${tfSpeech} เสร็จแล้ว ราคาปัจจุบัน ${priceText} สัญญาณตอนนี้คือ ${dirSpeech}`;
+
+  if (isUnlocked && !dirWord.includes('WAIT')) {
+    const entry = document.getElementById('lvEntry').textContent;
+    const sl = document.getElementById('lvSL').textContent;
+    const tp = document.getElementById('lvTP').textContent;
+    msg += ` จุดเข้า ${entry} จุดตัดขาดทุนที่ ${sl} และเป้าหมายทำกำไรที่ ${tp}`;
+  } else if (!isUnlocked && !dirWord.includes('WAIT')) {
+    msg += ' กรุณาปลดล็อกด้วยรหัส VIP เพื่อดูจุดเข้าและระดับราคาแบบเต็ม';
+  }
+
+  document.getElementById('voiceTranscript').textContent = `🤖 ${msg}`;
+  speakStatus(msg);
 }
 
 function toggleVoiceMonitor() {
@@ -845,7 +899,8 @@ function executeVoiceAction(cmd) {
       else if (cmd.value === '2') changeRR(2);
       break;
     case 'refresh':
-      run();
+    case 'analyze':
+      voiceAnalyzeAndSpeak();
       break;
     case 'addSymbol':
       if (cmd.value) {
@@ -892,9 +947,10 @@ function handleVoiceCommand(text) {
   if (text.includes('1 ต่อ 1') || text.includes('หนึ่งต่อหนึ่ง') || text.includes('rr 1:1')) { changeRR(1); return; }
   if (text.includes('1 ต่อ 2') || text.includes('หนึ่งต่อสอง') || text.includes('rr 1:2')) { changeRR(2); return; }
 
-  // 4) สั่งตรวจสอบสัญญาณ
-  if (text.includes('ตรวจสอบ') || text.includes('รีเฟรช') || text.includes('เช็คสัญญาณ') || text.includes('refresh')) {
-    run(); return;
+  // 4) สั่งวิเคราะห์ / ตรวจสอบสัญญาณ — วิเคราะห์กราฟจริงจาก Binance แล้วพูดผลสรุปกลับทันที
+  if (text.includes('วิเคราะห์') || text.includes('ตรวจสอบ') || text.includes('รีเฟรช') ||
+      text.includes('เช็คสัญญาณ') || text.includes('analyze') || text.includes('analyse') || text.includes('refresh')) {
+    voiceAnalyzeAndSpeak(); return;
   }
 
   document.getElementById('voiceTranscript').textContent += ' — ❔ ไม่พบคำสั่งที่ตรงกัน';
@@ -1159,6 +1215,12 @@ function renderUI(price, strats, dir, levels) {
     scanBadgeEl.textContent = '🔒 ผลสแกน (ปลดล็อกด้วยรหัส VIP)';
   }
   document.getElementById('scanUpdated').textContent = `ราคา ${currentAsset === 'EURUSD' ? '' : '$'}${fmt(price)} • สแกนล่าสุด ${nowStr}`;
+
+  // ─── อัปเดตกล่องผลสแกนราคาย่อ ในแผงตั้งค่าฝั่งซ้าย (ใต้ช่องเพิ่มสัญลักษณ์) ───
+  document.getElementById('miniScanSymbol').textContent = `${currentAsset} · ${currentTFText}`;
+  document.getElementById('miniScanPrice').textContent = `${currentAsset === 'EURUSD' ? '' : '$'}${fmt(price)}`;
+  document.getElementById('miniScanPrice').style.color = colorM[dir];
+  document.getElementById('miniScanTime').textContent = `สแกนล่าสุด ${nowStr}`;
 
   if (voiceMonitorEnabled && isUnlocked && dir !== lastAnnouncedDirection) {
     const dirTextM = {buy:'ซื้อ BUY', sell:'ขาย SELL', hold:'รอ WAIT'};
