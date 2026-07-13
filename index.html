@@ -850,6 +850,13 @@ async function runWatchlistScan() {
     if (!res) {
       return `<div class="mtf-row hold"><span class="mtf-tf" style="width:auto;flex:1;text-align:left;">${key}</span><span class="mtf-sig hold">N/A</span><span class="mtf-price">—</span></div>`;
     }
+    if (!isUnlocked) {
+      return `<div class="mtf-row hold">
+        <span class="mtf-tf" style="width:auto;flex:1;text-align:left;">${key}</span>
+        <span class="mtf-sig hold">🔒 LOCKED</span>
+        <span class="mtf-price">${fmt(res.price)}</span>
+      </div>`;
+    }
     const sigText = res.direction === 'buy' ? 'BUY ▲' : res.direction === 'sell' ? 'SELL ▼' : 'WAIT ◆';
     return `<div class="mtf-row ${res.direction}">
       <span class="mtf-tf" style="width:auto;flex:1;text-align:left;" title="ไทม์เฟรม ${currentTFText}">${key}</span>
@@ -857,6 +864,10 @@ async function runWatchlistScan() {
       <span class="mtf-price">${fmt(res.price)}</span>
     </div>`;
   }).join('');
+
+  if (!isUnlocked) {
+    wrap.insertAdjacentHTML('beforeend', '<div class="watchlist-scan-empty">🔒 ปลดล็อกด้วยรหัส VIP เพื่อดูผลสแกนสัญญาณ (BUY/SELL) แบบเต็ม</div>');
+  }
 }
 
 /* ═══════════ VOICE COMMAND ═══════════ */
@@ -1313,8 +1324,8 @@ function renderUI(price, strats, dir, levels) {
   // ─── อัปเดตกล่องผลสแกนราคาย่อ ในแผงตั้งค่าฝั่งซ้าย (ใต้ช่องเพิ่มสัญลักษณ์) ───
   document.getElementById('miniScanSymbol').textContent = `${currentAsset} · ${currentTFText}`;
   document.getElementById('miniScanPrice').textContent = `${currentAsset === 'EURUSD' ? '' : '$'}${fmt(price)}`;
-  document.getElementById('miniScanPrice').style.color = colorM[dir];
-  document.getElementById('miniScanTime').textContent = `สแกนล่าสุด ${nowStr}`;
+  document.getElementById('miniScanPrice').style.color = isUnlocked ? colorM[dir] : 'var(--gold)';
+  document.getElementById('miniScanTime').textContent = isUnlocked ? `สแกนล่าสุด ${nowStr}` : `🔒 ปลดล็อก VIP เพื่อดูสัญญาณ • สแกนล่าสุด ${nowStr}`;
 
   if (voiceMonitorEnabled && isUnlocked && dir !== lastAnnouncedDirection) {
     const dirTextM = {buy:'ซื้อ BUY', sell:'ขาย SELL', hold:'รอ WAIT'};
@@ -1407,15 +1418,29 @@ async function runMultiTimeframeScan() {
       directions.push('hold');
       return;
     }
+    priceEl.textContent = fmt(res.price);
+    if (!isUnlocked) {
+      row.className = 'mtf-row hold';
+      sigEl.className = 'mtf-sig hold';
+      sigEl.textContent = '🔒 LOCKED';
+      directions.push('locked');
+      return;
+    }
     row.className = `mtf-row ${res.direction}`;
     sigEl.className = `mtf-sig ${res.direction}`;
     sigEl.textContent = res.direction === 'buy' ? 'BUY ▲' : res.direction === 'sell' ? 'SELL ▼' : 'WAIT ◆';
-    priceEl.textContent = fmt(res.price);
     directions.push(res.direction);
   });
 
   // สรุปผล Confluence: ต้องสอดคล้องกันครบทั้ง 3 ไทม์เฟรมถึงจะถือเป็นสัญญาณความมั่นใจสูง
   const confEl = document.getElementById('mtfConfluence');
+
+  if (!isUnlocked) {
+    confEl.className = 'mtf-confluence';
+    confEl.textContent = '🔒 ปลดล็อกด้วยรหัส VIP เพื่อดูผลสแกนสัญญาณและ Confluence แบบเต็ม';
+    return;
+  }
+
   const buyCount = directions.filter(d => d === 'buy').length;
   const sellCount = directions.filter(d => d === 'sell').length;
 
